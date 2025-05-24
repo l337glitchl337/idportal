@@ -20,7 +20,7 @@ def create_app():
     )
 
     mail.init_app(app)
-
+    print(app)
     from routes import blueprint
     app.register_blueprint(blueprint=blueprint)
 

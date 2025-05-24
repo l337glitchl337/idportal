@@ -12,7 +12,7 @@
   </style>
 {% endblock %}
 
-{# =========================================== #}
+<!-- {# =========================================== #}
 {# Dummy data for testing purposes             #}
 {# =========================================== #}
 
@@ -20,7 +20,7 @@
 {% set pending_pages=[1,2] %}{% set pending_page=1 %}{% set pending_prev_page=None %}{% set pending_next_page=2 %}
 {% set approved_pages=[1] %}{% set approved_page=1 %}{% set approved_prev_page=None %}{% set approved_next_page=None %}
 {% set rejected_pages=[1] %}{% set rejected_page=1 %}{% set rejected_prev_page=None %}{% set rejected_next_page=None %}
-{% set admin_pages=[1] %}{% set admin_page=1 %}{% set admin_prev_page=None %}{% set admin_next_page=None %}
+{% set admin_pages=[1] %}{% set admin_page=1 %}{% set admin_prev_page=None %}{% set admin_next_page=None %} -->
 
 {% block content %}
 
@@ -104,9 +104,9 @@
       </table>
       <nav aria-label="Pending pagination">
         <ul class="pagination pagination-sm justify-content-center">
-          {% if pending_prev_page %}<li class="page-item"><a class="page-link" href="#">Previous</a></li>{% endif %}
+         <!--  {% if pending_prev_page %}<li class="page-item"><a class="page-link" href="#">Previous</a></li>{% endif %}
           {% for p in pending_pages %}<li class="page-item {% if p==pending_page %}active{% endif %}"><a class="page-link" href="#">{{ p }}</a></li>{% endfor %}
-          {% if pending_next_page %}<li class="page-item"><a class="page-link" href="#">Next</a></li>{% endif %}
+          {% if pending_next_page %}<li class="page-item"><a class="page-link" href="#">Next</a></li>{% endif %} -->
         </ul>
       </nav>
     </div>

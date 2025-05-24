@@ -426,3 +426,25 @@ def change_admin_password(username, new_password) -> bool:
             conn.close()
         return False
     return True
+
+def compare_password(username, current_password) -> bool:
+    params = get_db_params()
+    try:
+        conn = psycopg2.connect(**params)
+        cursor = conn.cursor()
+        cursor.execute("select password from admins where username=%s", (username,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        db_password = row[0]
+        if not bcrypt.checkpw(current_password.encode("utf-8"), db_password.encode("utf-8")):
+            return False
+    except:
+        print(traceback.format_exc())
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+        return False
+    
+    return True

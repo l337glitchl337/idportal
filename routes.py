@@ -96,13 +96,7 @@ def admin_panel():
                            pending_requests=pending_requests,
                            rejected_requests=rejected_requests,
                            approved_requests=approved_requests,
-                           current_user={"role" : session["role"]})
-
-@blueprint.route("/update_profile")
-@check_admin_login
-@check_first_login
-def update_profile():
-    return render_template("admin_panel.html")
+                           current_user={"role" : session["role"], "username" : session["admin_username"], "email" : session["email"]})
 
 @blueprint.route("/create_admin_account", methods = ["POST"])
 @check_admin_login
@@ -174,3 +168,25 @@ def first_login():
         else:
             flash("Error changing password, please try again!", "danger")
             return redirect(url_for("main.first_login"))
+        
+@blueprint.route("/update_admin_password", methods=["POST"])
+@check_admin_login
+@check_first_login
+def update_admin_password():
+    current_password = request.form.get("current_password")
+    new_password = request.form.get("new_password")
+    confirm_password = request.form.get("confirm_password")
+    
+    if compare_password(session["admin_username"], current_password):
+        if new_password != confirm_password:
+            flash("Passwords do not match", "danger")
+            return redirect(url_for("main.admin_panel"))
+        if change_admin_password(session["admin_username"], new_password):
+            flash("Password changed successfully!", "success")
+            return redirect(url_for("main.admin_panel"))
+        else:
+            flash("Error changing password, please try again!", "danger")
+            return redirect(url_for("main.admin_panel"))
+    else:
+        flash("Current password is incorrect", "danger")
+        return redirect(url_for("main.admin_panel"))

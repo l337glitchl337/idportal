@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel – {{ SITE_TITLE }}{% endblock %}
+
+{% block head %}
+  <style>
+    .nav-pills .nav-link.active { background-color: #007bff; }
+    .table-actions button { margin-right: 0.5rem; }
+    .modal-body textarea { resize: none; }
+    .bulk-actions { margin-bottom: 1rem; }
+    .photo-btn { color: #0dcaf0; }
+  </style>
+{% endblock %}
+
+{# =========================================== #}
+{# Dummy data for testing purposes             #}
+{# =========================================== #}
+
+{# Pagination vars #}
+{% set pending_pages=[1,2] %}{% set pending_page=1 %}{% set pending_prev_page=None %}{% set pending_next_page=2 %}
+{% set approved_pages=[1] %}{% set approved_page=1 %}{% set approved_prev_page=None %}{% set approved_next_page=None %}
+{% set rejected_pages=[1] %}{% set rejected_page=1 %}{% set rejected_prev_page=None %}{% set rejected_next_page=None %}
+{% set admin_pages=[1] %}{% set admin_page=1 %}{% set admin_prev_page=None %}{% set admin_next_page=None %}
+
+{% block content %}
+
+<!-- {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="my-4">
+              {% for category, msg in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show py-3 px-4 mb-3" role="alert">
+                  <div class="text-center">{{ msg }}</div>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %} -->
+<div class="container py-4">
+  <h2 class="text-white mb-4">Admin Panel</h2>
+  <ul class="nav nav-pills mb-3" id="admin-tab" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pending">Pending Requests</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#approved">Approved</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#rejected">Rejected</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#admins">Manage Admins</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#profile">My Profile</button></li>
+    <li class="nav-item">
+      <a class="nav-link text-danger" href="/logout">Log Out</a>
+    </li>
+  </ul>
+
+  <div class="tab-content text-white" id="admin-tabContent">
+    <!-- Pending Requests -->
+    <div class="tab-pane fade show active" id="pending">
+      <div class="bulk-actions">
+      <button class="btn btn-sm btn-success"
+          data-bs-toggle="modal"
+          data-bs-target="#resultModal"
+          data-result-type="success"
+          data-result-message="Selected submissions approved successfully.">Approve Selected</button>
+      <button class="btn btn-sm btn-danger"
+          data-bs-toggle="modal"
+          data-bs-target="#rejectModal">Reject Selected</button>
+      </div>
+      <table class="table table-dark table-hover">
+      <thead>
+        <tr>
+        <th><input type="checkbox" id="selectAllPending"></th>
+        <th>Request ID</th><th>Name</th><th>Email</th><th>Student ID</th><th>Campus</th><th>Time</th><th>Photo</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in pending_requests %}
+        <tr>
+        <td><input type="checkbox" class="pending-checkbox" value="{{ req.student_id }}"></td>
+        <td>{{ req.request_id }}</td>
+        <td>{{ req.full_name }}</td>
+        <td>{{ req.email }}</td>
+        <td>{{ req.student_id }}</td>
+        <td>{{ req.campus }}</td>
+        <td>{{ req.timestamp_inserted }}</td>
+        <td>
+          <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
+              data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
+              data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+          View Photos
+          </button>
+        </td>
+        <td class="table-actions">
+          <button class="btn btn-sm btn-success"
+              data-bs-toggle="modal"
+              data-bs-target="#resultModal"
+              data-result-type="success"
+              data-result-message="Request {{ req.request_id }} approved."
+              data-request-id="{{ req.request_id }}">Approve</button>
+          <button class="btn btn-sm btn-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#rejectModal"
+              data-id="{{ req.request_id }}">Reject</button>
+        </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      </table>
+      <nav aria-label="Pending pagination">
+        <ul class="pagination pagination-sm justify-content-center">
+          {% if pending_prev_page %}<li class="page-item"><a class="page-link" href="#">Previous</a></li>{% endif %}
+          {% for p in pending_pages %}<li class="page-item {% if p==pending_page %}active{% endif %}"><a class="page-link" href="#">{{ p }}</a></li>{% endfor %}
+          {% if pending_next_page %}<li class="page-item"><a class="page-link" href="#">Next</a></li>{% endif %}
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Approved Requests -->
+    <div class="tab-pane fade" id="approved">
+      <table class="table table-dark table-hover">
+        <th>Request ID</th><th>Name</th><th>Email</th><th>Student ID</th><th>Campus</th><th>Time</th><th>Photo</th>
+        <tbody>
+          {% for req in approved_requests %}
+          <tr>
+            <td>{{ req.request_id }}</td>
+            <td>{{ req.full_name }}</td>
+            <td>{{ req.email }}</td>
+            <td>{{ req.student_id }}</td>
+            <td>{{ req.campus }}</td>
+            <td>{{ req.timestamp_inserted }}</td>
+            <td>
+              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
+                      data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
+                      data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                View Photos
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Rejected Requests -->
+    <div class="tab-pane fade" id="rejected">
+      <table class="table table-dark table-hover">
+      <thead>
+        <tr>
+        <th>Request ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Student ID</th>
+        <th>Campus</th>
+        <th>Time</th>
+        <th>Comments</th>
+        <th>Photo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in rejected_requests %}
+        <tr>
+        <td>{{ req.request_id }}</td>
+        <td>{{ req.full_name }}</td>
+        <td>{{ req.email }}</td>
+        <td>{{ req.student_id }}</td>
+        <td>{{ req.campus }}</td>
+        <td>{{ req.timestamp_inserted }}</td>
+        <td>
+          <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#commentsModal"
+              data-comments="{{ req.comments|e }}">
+          View Comments
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
+              data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
+              data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+          View Photos
+          </button>
+        </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      </table>
+    </div>
+
+    <!-- Comments Modal -->
+    <div class="modal fade" id="commentsModal" tabindex="-1">
+      <div class="modal-dialog">
+      <div class="modal-content bg-secondary text-white">
+        <div class="modal-header">
+        <h5 class="modal-title">Rejection Comments</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+        <p id="commentsModalBody" class="mb-0"></p>
+        </div>
+        <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+      var commentsModal = document.getElementById('commentsModal');
+      commentsModal.addEventListener('show.bs.modal', function(event) {
+        var btn = event.relatedTarget;
+        var comments = btn.getAttribute('data-comments') || '';
+        document.getElementById('commentsModalBody').textContent = comments;
+      });
+      });
+    </script>
+
+    <!-- Manage Admins -->
+    {% if current_user.role == 'super' %}
+      <!-- Manage Admins tab entry -->
+      <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Show Manage Admins tab if user is super
+        document.querySelectorAll('ul#admin-tab li').forEach(function(li) {
+        var btn = li.querySelector('button[data-bs-target="#admins"]');
+        if (btn) {
+          li.style.display = '';
+        }
+        });
+      });
+      </script>
+      <div class="tab-pane fade" id="admins">
+      <div class="d-flex justify-content-end mb-3">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#adminModal">Create Admin</button>
+      </div>
+      <table class="table table-dark table-hover">
+      <thead>
+        <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for admin in admins %}
+        <tr>
+        <td>{{ admin.full_name }}</td>
+        <td>{{ admin.email }}</td>
+        <td>{{ admin.username }}</td>
+        <td>{{ admin.role }}</td>
+        <td class="table-actions">
+        <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#adminModal"
+        data-admin='{{ admin|tojson }}'>Edit</button>
+        <button class="btn btn-sm btn-danger">Delete</button>
+        </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      </table>
+      <nav aria-label="Admins pagination">
+      <ul class="pagination pagination-sm justify-content-center">
+        {% for p in admin_pages %}
+        <li class="page-item {% if p==admin_page %}active{% endif %}"><a class="page-link" href="#">{{ p }}</a></li>
+        {% endfor %}
+      </ul>
+      </nav>
+      </div>
+    {% else %}
+      <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Hide Manage Admins tab if user is not super
+        document.querySelectorAll('ul#admin-tab li').forEach(function(li) {
+        var btn = li.querySelector('button[data-bs-target="#admins"]');
+        if (btn) {
+          li.style.display = 'none';
+        }
+        });
+      });
+      </script>
+    {% endif %}
+
+    <!-- My Profile -->
+    <div class="tab-pane fade" id="profile">
+      <div class="card bg-secondary text-white shadow-lg rounded-4 p-4 profile-form">
+        <h4 class="mb-3">Edit Account</h4>
+        <form method="POST" action="{{ url_for('main.update_profile') }}">
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" value="testuser" required>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="test@email.com" required>
+          </div>
+          <hr class="border-light">
+          <h5 class="mt-3">Change Password</h5>
+          <div class="mb-3">
+            <label for="current_password" class="form-label">Current Password</label>
+            <input type="password" class="form-control" id="current_password" name="current_password" required>
+          </div>
+          <div class="mb-3">
+            <label for="new_password" class="form-label">New Password</label>
+            <input type="password" class="form-control" id="new_password" name="new_password" required>
+          </div>
+          <div class="mb-3">
+            <label for="confirm_password" class="form-label">Confirm New Password</label>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Reject Modal #}
+<div class="modal fade" id="rejectModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-secondary text-white">
+      <div class="modal-header">
+        <h5 class="modal-title">Reject Request</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="rejectForm" method="POST" action="{{ url_for('main.reject_submission') }}">
+        <div class="modal-body">
+          <input type="hidden" id="rejectRequestId" name="request_id">
+          <div class="mb-3">
+            <label for="rejectReason" class="form-label">Reason (max 250 chars)</label>
+            <textarea class="form-control" id="rejectReason" name="comments" rows="3" maxlength="250" required></textarea>
+            <div class="form-text text-end text-white" id="charCount">250 characters remaining</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger" id="submitReject">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# Photo Modal #}
+<div class="modal fade" id="photoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content bg-secondary text-white">
+      <div class="modal-header">
+        <h5 class="modal-title">Submission Photos</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="mb-3">
+          <div class="fw-bold mb-1">User Photo</div>
+          <img id="userPhoto" src="" alt="User Photo" class="img-fluid" style="max-height:200px;">
+        </div>
+        <div>
+          <div class="fw-bold mb-1">Driver's License</div>
+          <img id="licensePhoto" src="" alt="License Photo" class="img-fluid" style="max-height:200px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Result Modal #}
+<div class="modal fade" id="resultModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-secondary text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resultModalTitle"></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="resultModalMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Removed duplicate approve button click handler script block to prevent errors -->
+
+{# create admin modal #}
+<div class="modal fade" id="adminModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-secondary text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="adminModalTitle">Create Admin</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="adminForm" method="POST" action="{{ url_for('main.create_admin_account') }}">
+        <div class="modal-body">
+          <input type="hidden" id="adminId" name="id" value="">
+          <div class="mb-3">
+            <label for="adminFirstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="adminFirstName" name="first_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="adminLastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="adminLastName" name="last_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="adminEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="adminEmail" name="email" required>
+          </div>
+          <div class="mb-3">
+            <label for="adminUsername" class="form-label">Username</label>
+            <input type="text" class="form-control" id="adminUsername" name="username" required>
+          </div>
+          <div class="mb-3">
+            <label for="adminPassword" class="form-label">Password</label>
+            <input type="password" class="form-control" id="adminPassword" name="password" required>
+          </div>
+          <div class="mb-3">
+            <label for="adminRole" class="form-label">Role</label>
+            <select class="form-select" id="adminRole" name="role" required>
+              <option value="manager">Manager</option>
+              <option value="super">Super</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveAdminBtn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Reject modal char count
+  var rejectModal = document.getElementById('rejectModal');
+  var textarea = document.getElementById('rejectReason');
+  var counter = document.getElementById('charCount');
+  function updateCharCount() {
+    var remaining = 250 - textarea.value.length;
+    counter.textContent = remaining + ' characters remaining';
+  }
+  textarea.addEventListener('input', updateCharCount);
+  rejectModal.addEventListener('show.bs.modal', function() {
+    textarea.value = '';
+    updateCharCount();
+  });
+
+  // Photo modal setup
+  var photoModal = document.getElementById('photoModal');
+  photoModal.addEventListener('show.bs.modal', function(event) {
+    var btn = event.relatedTarget;
+    var userSrc = btn.getAttribute('data-photo-user');
+    var licenseSrc = btn.getAttribute('data-photo-license');
+    photoModal.querySelector('#userPhoto').src = userSrc;
+    photoModal.querySelector('#licensePhoto').src = licenseSrc;
+  });
+
+  // Result modal setup
+  // Remove static title/message setting here to avoid overwriting AJAX result
+  var resultModal = document.getElementById('resultModal');
+  resultModal.addEventListener('show.bs.modal', function(event) {
+    // Do nothing here; title/message will be set by AJAX handlers
+  });
+
+  // Refresh page when resultModal is hidden (for approve/deny)
+  resultModal.addEventListener('hidden.bs.modal', function() {
+    // Only refresh if the modal was shown for approve/reject actions
+    // (You can refine this logic if you use resultModal for other things)
+    location.reload();
+  });
+
+  // Reject modal: inject ID
+  rejectModal.addEventListener('show.bs.modal', function(event) {
+    var btn = event.relatedTarget;
+    var id = btn.getAttribute('data-id');
+    document.getElementById('rejectRequestId').value = id;
+  });
+
+  // Bulk select
+  document.getElementById('selectAllPending').addEventListener('change', function() {
+    var checked = this.checked;
+    document.querySelectorAll('.pending-checkbox').forEach(cb => cb.checked = checked);
+  });
+
+  // Admin modal setup
+  var adminModalEl = document.getElementById('adminModal');
+  adminModalEl.addEventListener('show.bs.modal', function(event) {
+    var btn         = event.relatedTarget;
+    var titleEl     = adminModalEl.querySelector('.modal-title');
+    var form        = document.getElementById('adminForm');
+    var idInput     = form.querySelector('#adminId');
+    var emailInput  = form.querySelector('#adminEmail');
+    var userInput   = form.querySelector('#adminUsername');
+    var passInput   = form.querySelector('#adminPassword');
+    var roleSelect  = form.querySelector('#adminRole');
+
+    if (btn && btn.getAttribute('data-admin')) {
+      // EDIT mode
+      var admin = JSON.parse(btn.getAttribute('data-admin'));
+      titleEl.textContent    = 'Edit Admin';
+      idInput.value          = admin.id;
+      emailInput.value       = admin.email;
+      userInput.value        = admin.username;
+      passInput.value        = '';
+      roleSelect.value       = admin.role;
+    } else {
+      // CREATE mode
+      titleEl.textContent    = 'Create Admin';
+      idInput.value = emailInput.value = userInput.value = passInput.value = '';
+      roleSelect.value       = 'manager';
+    }
+  });
+
+  // Approve button click handler (fix modal title/message)
+  var resultModalEl = document.getElementById('resultModal');
+  var resultModalInstance = bootstrap.Modal.getOrCreateInstance(resultModalEl);
+
+  document.querySelectorAll('button[data-bs-target="#resultModal"][data-request-id]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var requestId = btn.getAttribute('data-request-id');
+      fetch("{{ url_for('main.approve_submission') }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: new URLSearchParams({request_id: requestId})
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Set correct title and message before showing the modal
+        document.getElementById('resultModalTitle').textContent = data.success ? "Success" : "Error";
+        document.getElementById('resultModalMessage').textContent = data.message || (data.success ? "Request approved." : "An error occurred.");
+        resultModalInstance.show();
+      })
+      .catch(() => {
+        document.getElementById('resultModalTitle').textContent = "Error";
+        document.getElementById('resultModalMessage').textContent = "An error occurred.";
+        resultModalInstance.show();
+      });
+    });
+  });
+
+  // Reject form submit handler (show result modal and refresh after close)
+  var rejectForm = document.getElementById('rejectForm');
+  rejectForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var formData = new FormData(rejectForm);
+    fetch(rejectForm.action, {
+      method: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('resultModalTitle').textContent = data.success ? "Success" : "Error";
+      document.getElementById('resultModalMessage').textContent = data.message || (data.success ? "Request rejected." : "An error occurred.");
+      bootstrap.Modal.getOrCreateInstance(resultModalEl).show();
+      bootstrap.Modal.getOrCreateInstance(rejectModal).hide();
+    })
+    .catch(() => {
+      document.getElementById('resultModalTitle').textContent = "Error";
+      document.getElementById('resultModalMessage').textContent = "An error occurred.";
+      bootstrap.Modal.getOrCreateInstance(resultModalEl).show();
+      bootstrap.Modal.getOrCreateInstance(rejectModal).hide();
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ subject }}</title>
+  <style>
+    body { margin:0; padding:0; background:#f4f4f4; }
+    table { border-collapse:collapse; width:100%; max-width:600px; margin:0 auto; background:#fff; font-family:Arial,sans-serif; color:#333; }
+    .header { background:#004085; padding:20px; text-align:center; }
+    .header img { max-width:150px; }
+    .content { padding:30px 20px; line-height:1.5; font-size:16px; }
+    .content h1 { font-size:22px; color:#004085; margin-top:0; }
+    .content p { margin:15px 0; }
+    .footer { background:#e9ecef; padding:20px; font-size:12px; text-align:center; color:#666; }
+    .btn { display:inline-block; background:#28a745; color:#fff!important; padding:12px 20px; border-radius:4px; text-decoration:none; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <table>
+    <tr>
+      <td class="header">
+        <img src="https://via.placeholder.com/150x50?text=Your+Logo" alt="Your Logo">
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <h1>Hello {{ student_name }},</h1>
+        <p>Thank you! We have received your request for a new photo ID.</p>
+        <p>Your request #<strong>{{ request_id }}</strong> is in our queue and will be processed within <strong>24–48 hours</strong>.</p>
+        <p>If you have any questions in the meantime, please contact your IT Help Desk at <strong>{{ helpdesk_phone }}</strong>.</p>
+        <p>We’ll let you know as soon as your ID is ready for pickup.</p>
+        <p>Best regards,<br>Your University IT Team</p>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        © {{ current_year }} Your University • 123 Campus Drive • City, State ZIP
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

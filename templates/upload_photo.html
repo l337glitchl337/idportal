@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Upload Your Photo{% endblock %}
+
+{% block head %}
+  <!-- Cropper.js CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css"
+    rel="stylesheet"/>
+  <style>
+    /* Preview & crop container styling */
+    .crop-container {
+      max-height: 500px;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    #preview {
+      max-width: 100%;
+      max-height: 400px;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+    .preview-img {
+      max-width: 100%;
+      max-height: 200px;
+      margin-top: 0.5rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-lg">
+      <div class="card-body">
+        <h3 class="card-title mb-4 text-center">Upload and Crop Your ID Photo</h3>
+
+        <form method="POST"
+              action="{{ url_for('main.upload_photo') }}"
+              enctype="multipart/form-data">
+          <!-- ID Photo input -->
+          <div class="mb-3">
+            <label for="idPhotoUpload" class="form-label">
+              Choose a photo for your ID
+            </label>
+            <input
+              type="file"
+              class="form-control"
+              id="idPhotoUpload"
+              name="photo"
+              accept="image/jpeg,image/png,image/webp"
+              required>
+            <div class="form-text">
+              JPG, PNG or WEBP only. Max size: 10 MB.
+            </div>
+          </div>
+
+          <!-- Preview & crop area for ID photo -->
+          <div id="preview-section" style="display:none;">
+            <div class="crop-container">
+              <img id="preview" class="img-fluid mx-auto d-block" alt="Photo for cropping">
+            </div>
+            <button
+              type="button"
+              class="btn btn-secondary mb-3"
+              id="crop-btn"
+              style="display:none;">
+              Crop Image
+            </button>
+          </div>
+
+          <!-- Driver's License input -->
+          <div class="mb-3">
+            <label for="dlUpload" class="form-label">
+              Upload a picture of your Driver's License
+            </label>
+            <input
+              type="file"
+              class="form-control"
+              id="dlUpload"
+              name="drivers_license"
+              accept="image/jpeg,image/png,image/webp"
+              required>
+            <div class="form-text">
+              JPG, PNG or WEBP only. Max size: 10 MB.
+            </div>
+          </div>
+
+          <!-- Preview for Driver's License -->
+          <div class="mb-3 text-center" id="dl-preview-container" style="display:none;">
+            <img id="dl-preview-img" class="img-thumbnail preview-img" alt="License Preview">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            Submit Documents
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- Cropper.js JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js">
+  </script>
+  <script>
+    const idInput     = document.getElementById('idPhotoUpload');
+    const previewSection = document.getElementById('preview-section');
+    const previewImage   = document.getElementById('preview');
+    const cropBtn        = document.getElementById('crop-btn');
+    let cropper;
+
+    // Validate file type & size for ID photo
+    function validateFile(file) {
+      const types = ['image/jpeg','image/png','image/webp'];
+      return types.includes(file.type) && file.size <= 10*1024*1024;
+    }
+
+    idInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file || !validateFile(file)) {
+        alert('Please select a JPG/PNG/WEBP under 10 MB.');
+        idInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = evt => {
+        previewImage.src = evt.target.result;
+        previewSection.style.display = 'block';
+        cropBtn.style.display = 'inline-block';
+
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(previewImage, {
+          aspectRatio: 200 / 200,
+          viewMode: 1,
+          background: false,
+          responsive: true,
+          // Fixed crop-box size
+          cropBoxResizable: false,
+          cropBoxMovable: true,
+          minCropBoxWidth: 200,
+          minCropBoxHeight: 200,
+          maxCropBoxWidth: 200,
+          maxCropBoxHeight: 200,
+          ready() {
+            const cropperInstance = this.cropper;
+            const containerData = cropperInstance.getContainerData();
+            const left = (containerData.width - 200) / 2;
+            const top  = (containerData.height - 200) / 2;
+            cropperInstance.setCropBoxData({ left, top, width: 200, height: 200 });
+          }
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    cropBtn.addEventListener('click', () => {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({
+        width: 300, height: 300, imageSmoothingQuality: 'high'
+      });
+      canvas.toBlob(blob => {
+        const newFile = new File([blob], idInput.files[0].name, { type: blob.type });
+        const dt = new DataTransfer();
+        dt.items.add(newFile);
+        idInput.files = dt.files;
+
+        previewImage.src = URL.createObjectURL(blob);
+        cropBtn.style.display = 'none';
+        cropper.destroy();
+        cropper = null;
+      }, 'image/png');
+    });
+
+    // Driver's License preview
+    const dlInput = document.getElementById('dlUpload');
+    const dlPreviewContainer = document.getElementById('dl-preview-container');
+    const dlPreviewImg = document.getElementById('dl-preview-img');
+
+    dlInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!validateFile(file)) {
+        alert('Please select a JPG/PNG/WEBP under 10 MB.');
+        dlInput.value = '';
+        dlPreviewContainer.style.display = 'none';
+        return;
+      }
+      dlPreviewImg.src = URL.createObjectURL(file);
+      dlPreviewContainer.style.display = 'block';
+    });
+  </script>
+{% endblock %}

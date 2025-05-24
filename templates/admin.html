@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login{% endblock %}
+
+{% block head %}
+  <!-- admin‑specific CSS -->
+  <style>
+    .login-container {
+      max-width: 400px;
+      margin: 80px auto;
+      padding: 20px;
+    }
+
+    /* match student login logo size */
+    .id-card {
+      max-width: 320px;
+      width: 100%;
+      display: block;
+      margin: 0.5rem auto 20px; /* same vertical spacing as student */
+      border: none;
+    }
+
+    .btn-login {
+      background-color: #007bff;
+      border: none;
+      color: #fff;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container text-center">
+  <img src="{{ url_for('static', filename='admin_logo.png') }}"
+       alt="Admin Badge"
+       class="id-card">
+  <h3 class="mb-4">Administrator Portal</h3>
+  <form method="POST" action="{{ url_for('main.admin') }}">
+    <div class="mb-3">
+      <input type="text"
+             name="username"
+             class="form-control"
+             placeholder="Admin Username"
+             required
+             autofocus>
+    </div>
+    <div class="mb-3">
+      <input type="password"
+             name="password"
+             class="form-control"
+             placeholder="Password"
+             required>
+    </div>
+    <button type="submit" class="btn btn-login w-100">Sign In</button>
+  </form>
+</div>
+{% endblock %}

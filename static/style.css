@@ -1,0 +1,13 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+  }
+  
+  .id-card-img {
+    max-width: 320px;
+    margin-bottom: 1.5rem;
+  }
+  
+  .card {
+    border: none;
+  }

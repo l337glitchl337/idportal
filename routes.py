@@ -92,12 +92,21 @@ def admin():
 @check_admin_login
 @check_first_login
 def admin_panel():
-    admins, pending_requests, rejected_requests, approved_requests = populate_admin_panel()
+    page = request.args.get("page", 1, type=int)
+
+    active_tab = request.args.get("active_tab", "pending") 
+
+    admins, pending_requests, rejected_requests, approved_requests, admin_prev_page, admin_next_page, admin_pages = populate_admin_panel(page)
     return render_template("admin_panel.html", admins=admins,
                            pending_requests=pending_requests,
                            rejected_requests=rejected_requests,
                            approved_requests=approved_requests,
-                           current_user={"role" : session["role"], "username" : session["admin_username"], "email" : session["email"]})
+                           current_user={"role" : session["role"], "username" : session["admin_username"], "email" : session["email"]},
+                           active_tab=active_tab,
+                           admin_prev_page=admin_prev_page,
+                           admin_next_page=admin_next_page,
+                           admin_pages=admin_pages,
+                           current_page=page)
 
 @blueprint.route("/create_admin_account", methods = ["POST"])
 @check_admin_login

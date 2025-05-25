@@ -243,19 +243,26 @@ def create_admin(first_name, last_name, username, password, email, role) -> bool
     
     return True
 
-def populate_admin_panel() -> dict:
+def populate_admin_panel(page=1, per_page=10) -> dict:
     params = get_db_params()
     admins = []
     pending_requests = []
     approved_requests = []
     rejected_requests = []
+    offset = (page - 1) * per_page
 
     try:
         conn = psycopg2.connect(**params)
         cursor = conn.cursor()
 
+        cursor.execute("SELECT COUNT(*) FROM admins")
+        total_admins = cursor.fetchone()[0]
+        admin_pages = (total_admins + per_page - 1) // per_page
+        admin_prev_page = page - 1 if page > 1 else None
+        admin_next_page = page + 1 if page < admin_pages else None
+
         if session["role"] == "super":
-            cursor.execute("select first_name || ' ' || last_name as full_name, email, username, role from admins")
+            cursor.execute("select first_name || ' ' || last_name as full_name, email, username, role from admins limit %s offset %s", (per_page, offset))
             rows = cursor.fetchall()
 
             for row in rows:
@@ -329,7 +336,7 @@ def populate_admin_panel() -> dict:
         if conn:
             conn.close()
             return False
-    return admins, pending_requests, rejected_requests, approved_requests
+    return admins, pending_requests, rejected_requests, approved_requests, admin_prev_page, admin_next_page, admin_pages
 
 def create_submission(photo_filepath, license_filepath):
     first_name = session["first_name"][0].decode()

@@ -10,17 +10,9 @@
     .bulk-actions { margin-bottom: 1rem; }
     .photo-btn { color: #0dcaf0; }
   </style>
-{% endblock %}
+{% endblock %} 
 
-<!-- {# =========================================== #}
-{# Dummy data for testing purposes             #}
-{# =========================================== #}
 
-{# Pagination vars #}
-{% set pending_pages=[1,2] %}{% set pending_page=1 %}{% set pending_prev_page=None %}{% set pending_next_page=2 %}
-{% set approved_pages=[1] %}{% set approved_page=1 %}{% set approved_prev_page=None %}{% set approved_next_page=None %}
-{% set rejected_pages=[1] %}{% set rejected_page=1 %}{% set rejected_prev_page=None %}{% set rejected_next_page=None %}
-{% set admin_pages=[1] %}{% set admin_page=1 %}{% set admin_prev_page=None %}{% set admin_next_page=None %} -->
 
 {% block content %}
 
@@ -39,82 +31,98 @@
 <div class="container py-4">
   <h2 class="text-white mb-4">Admin Panel</h2>
   <ul class="nav nav-pills mb-3" id="admin-tab" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pending">Pending Requests</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#approved">Approved</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#rejected">Rejected</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#admins">Manage Admins</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#profile">My Profile</button></li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'pending' %}active{% endif %}" 
+           href="{{ url_for('main.admin_panel', active_tab='pending') }}">Pending Requests</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'approved' %}active{% endif %}" 
+           href="{{ url_for('main.admin_panel', active_tab='approved') }}">Approved</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'rejected' %}active{% endif %}" 
+           href="{{ url_for('main.admin_panel', active_tab='rejected') }}">Rejected</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'admins' %}active{% endif %}" 
+           href="{{ url_for('main.admin_panel', active_tab='admins') }}">Manage Admins</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}" 
+           href="{{ url_for('main.admin_panel', active_tab='profile') }}">My Profile</a>
+    </li>
     <li class="nav-item">
       <a class="nav-link text-danger" href="/logout">Log Out</a>
     </li>
-  </ul>
+</ul>
 
-  <div class="tab-content text-white" id="admin-tabContent">
-    <!-- Pending Requests -->
-    <div class="tab-pane fade show active" id="pending">
+  <div class="tab-content">
+    <div class="tab-pane fade {% if active_tab == 'pending' %}show active{% endif %}" id="pending">
       <div class="bulk-actions">
-      <button class="btn btn-sm btn-success"
-          data-bs-toggle="modal"
-          data-bs-target="#resultModal"
-          data-result-type="success"
-          data-result-message="Selected submissions approved successfully.">Approve Selected</button>
-      <button class="btn btn-sm btn-danger"
-          data-bs-toggle="modal"
-          data-bs-target="#rejectModal">Reject Selected</button>
+        <button class="btn btn-sm btn-success"
+            data-bs-toggle="modal"
+            data-bs-target="#resultModal"
+            data-result-type="success"
+            data-result-message="Selected submissions approved successfully.">Approve Selected</button>
+        <button class="btn btn-sm btn-danger"
+            data-bs-toggle="modal"
+            data-bs-target="#rejectModal">Reject Selected</button>
       </div>
       <table class="table table-dark table-hover">
-      <thead>
-        <tr>
-        <th><input type="checkbox" id="selectAllPending"></th>
-        <th>Request ID</th><th>Name</th><th>Email</th><th>Student ID</th><th>Campus</th><th>Time</th><th>Photo</th><th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for req in pending_requests %}
-        <tr>
-        <td><input type="checkbox" class="pending-checkbox" value="{{ req.student_id }}"></td>
-        <td>{{ req.request_id }}</td>
-        <td>{{ req.full_name }}</td>
-        <td>{{ req.email }}</td>
-        <td>{{ req.student_id }}</td>
-        <td>{{ req.campus }}</td>
-        <td>{{ req.timestamp_inserted }}</td>
-        <td>
-          <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-              data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
-              data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
-          View Photos
-          </button>
-        </td>
-        <td class="table-actions">
-          <button class="btn btn-sm btn-success"
-              data-bs-toggle="modal"
-              data-bs-target="#resultModal"
-              data-result-type="success"
-              data-result-message="Request {{ req.request_id }} approved."
-              data-request-id="{{ req.request_id }}">Approve</button>
-          <button class="btn btn-sm btn-danger"
-              data-bs-toggle="modal"
-              data-bs-target="#rejectModal"
-              data-id="{{ req.request_id }}">Reject</button>
-        </td>
-        </tr>
-        {% endfor %}
-      </tbody>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="selectAllPending"></th>
+            <th>Request ID</th><th>Name</th><th>Email</th><th>Student ID</th><th>Campus</th><th>Time</th><th>Photo</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in pending_requests %}
+          <tr>
+            <td><input type="checkbox" class="pending-checkbox" value="{{ req.student_id }}"></td>
+            <td>{{ req.request_id }}</td>
+            <td>{{ req.full_name }}</td>
+            <td>{{ req.email }}</td>
+            <td>{{ req.student_id }}</td>
+            <td>{{ req.campus }}</td>
+            <td>{{ req.timestamp_inserted }}</td>
+            <td>
+              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
+                  data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
+                  data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                View Photos
+              </button>
+            </td>
+            <td class="table-actions">
+              <button class="btn btn-sm btn-success"
+                  data-bs-toggle="modal"
+                  data-bs-target="#resultModal"
+                  data-result-type="success"
+                  data-result-message="Request {{ req.request_id }} approved."
+                  data-request-id="{{ req.request_id }}">Approve</button>
+              <button class="btn btn-sm btn-danger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#rejectModal"
+                  data-id="{{ req.request_id }}">Reject</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
-      <nav aria-label="Pending pagination">
-        <ul class="pagination pagination-sm justify-content-center">
-         <!--  {% if pending_prev_page %}<li class="page-item"><a class="page-link" href="#">Previous</a></li>{% endif %}
-          {% for p in pending_pages %}<li class="page-item {% if p==pending_page %}active{% endif %}"><a class="page-link" href="#">{{ p }}</a></li>{% endfor %}
-          {% if pending_next_page %}<li class="page-item"><a class="page-link" href="#">Next</a></li>{% endif %} -->
-        </ul>
-      </nav>
     </div>
 
-    <!-- Approved Requests -->
-    <div class="tab-pane fade" id="approved">
+    <div class="tab-pane fade {% if active_tab == 'approved' %}show active{% endif %}" id="approved">
       <table class="table table-dark table-hover">
-        <th>Request ID</th><th>Name</th><th>Email</th><th>Student ID</th><th>Campus</th><th>Time</th><th>Photo</th>
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Student ID</th>
+            <th>Campus</th>
+            <th>Time</th>
+            <th>Photo</th>
+          </tr>
+        </thead>
         <tbody>
           {% for req in approved_requests %}
           <tr>
@@ -138,7 +146,7 @@
     </div>
 
     <!-- Rejected Requests -->
-    <div class="tab-pane fade" id="rejected">
+    <div class="tab-pane fade {% if active_tab == 'rejected' %}show active{% endif %}" id="rejected">
       <table class="table table-dark table-hover">
       <thead>
         <tr>
@@ -222,7 +230,7 @@
         });
       });
       </script>
-      <div class="tab-pane fade" id="admins">
+      <div class="tab-pane fade {% if active_tab == 'admins' %}show active{% endif %}" id="admins">
       <div class="d-flex justify-content-end mb-3">
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#adminModal">Create Admin</button>
       </div>
@@ -252,14 +260,26 @@
         {% endfor %}
       </tbody>
       </table>
-      <nav aria-label="Admins pagination">
-      <ul class="pagination pagination-sm justify-content-center">
-        {% for p in admin_pages %}
-        <li class="page-item {% if p==admin_page %}active{% endif %}"><a class="page-link" href="#">{{ p }}</a></li>
+    <nav aria-label="Admins Pagination">
+      <ul class="pagination justify-content-center">
+        {% if admin_prev_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='admins', page=admin_prev_page) }}">Previous</a>
+        </li>
+        {% endif %}
+        {% for page in range(1, admin_pages + 1) %}
+        <li class="page-item {% if page == current_page %}active{% endif %}">
+          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='admins', page=page) }}">{{ page }}</a>
+        </li>
         {% endfor %}
+        {% if admin_next_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='admins', page=admin_next_page) }}">Next</a>
+        </li>
+        {% endif %}
       </ul>
-      </nav>
-      </div>
+    </nav>
+    </div>
     {% else %}
       <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -275,7 +295,7 @@
     {% endif %}
 
     <!-- My Profile -->
-    <div class="tab-pane fade" id="profile">
+    <div class="tab-pane fade {% if active_tab == 'profile' %}show active{% endif %}" id="profile">
       <div class="card bg-secondary text-white shadow-lg rounded-4 p-4 profile-form">
         <h4 class="mb-3">Edit Account</h4>
         <form method="POST" action="{{ url_for('main.update_admin_password') }}">
@@ -570,5 +590,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+/* document.addEventListener('DOMContentLoaded', function () {
+    const adminTab = document.getElementById('admin-tab');
+
+    // Save the active tab in the URL when a tab is clicked
+    adminTab.querySelectorAll('.nav-link').forEach(tab => {
+        tab.addEventListener('click', function (event) {
+            const targetTab = this.getAttribute('href');
+            const url = new URL(window.location);
+            url.searchParams.set('tab', targetTab.replace('#', ''));
+            window.history.pushState({}, '', url);
+        });
+    });
+}); */
 </script>
 {% endblock %}

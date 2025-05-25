@@ -43,16 +43,18 @@
         <a class="nav-link {% if active_tab == 'rejected' %}active{% endif %}" 
            href="{{ url_for('main.admin_panel', active_tab='rejected') }}">Rejected</a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'admins' %}active{% endif %}" 
-           href="{{ url_for('main.admin_panel', active_tab='admins') }}">Manage Admins</a>
-    </li>
+    {% if current_user.role == 'super' %}
+      <li class="nav-item">
+          <a class="nav-link {% if active_tab == 'admins' %}active{% endif %}" 
+            href="{{ url_for('main.admin_panel', active_tab='admins') }}">Manage Admins</a>
+      </li>
+    {% endif %}
     <li class="nav-item">
         <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}" 
            href="{{ url_for('main.admin_panel', active_tab='profile') }}">My Profile</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link text-danger" href="/logout">Log Out</a>
+      <a href="/logout" class="btn btn-danger" role="button">Log out</a>
     </li>
 </ul>
 
@@ -108,6 +110,25 @@
           {% endfor %}
         </tbody>
       </table>
+      <nav aria-label="Pending Pagination">
+      <ul class="pagination justify-content-center">
+        {% if pending_pagination.prev_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='pending', page=pending_pagination.prev_page) }}">Previous</a>
+        </li>
+        {% endif %}
+        {% for page in range(1, pending_pagination.total_pages + 1) %}
+        <li class="page-item {% if page == current_page %}active{% endif %}">
+          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='pending', page=page) }}">{{ page }}</a>
+        </li>
+        {% endfor %}
+        {% if pending_pagination.next_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='pending', page=pending_pagination.next_page) }}">Next</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
     </div>
 
     <div class="tab-pane fade {% if active_tab == 'approved' %}show active{% endif %}" id="approved">
@@ -143,6 +164,25 @@
           {% endfor %}
         </tbody>
       </table>
+       <nav aria-label="Approved Pagination">
+      <ul class="pagination justify-content-center">
+        {% if approved_pagination.prev_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='approved', page=approved_pagination.prev_page) }}">Previous</a>
+        </li>
+        {% endif %}
+        {% for page in range(1, approved_pagination.total_pages + 1) %}
+        <li class="page-item {% if page == current_page %}active{% endif %}">
+          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='approved', page=page) }}">{{ page }}</a>
+        </li>
+        {% endfor %}
+        {% if approved_pagination.next_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='approved', page=approved_pagination.next_page) }}">Next</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
     </div>
 
     <!-- Rejected Requests -->
@@ -186,6 +226,25 @@
         {% endfor %}
       </tbody>
       </table>
+      <nav aria-label="Rejected Pagination">
+      <ul class="pagination justify-content-center">
+        {% if rejected_pagination.prev_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='rejected', page=rejected_pagination.prev_page) }}">Previous</a>
+        </li>
+        {% endif %}
+        {% for page in range(1, rejected_pagination.total_pages + 1) %}
+        <li class="page-item {% if page == current_page %}active{% endif %}">
+          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='rejected', page=page) }}">{{ page }}</a>
+        </li>
+        {% endfor %}
+        {% if rejected_pagination.next_page %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='rejected', page=rejected_pagination.next_page) }}">Next</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
     </div>
 
     <!-- Comments Modal -->
@@ -267,7 +326,7 @@
           <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='admins', page=admin_prev_page) }}">Previous</a>
         </li>
         {% endif %}
-        {% for page in range(1, admin_pages + 1) %}
+        {% for page in range(1, admin_pagination.total_pages + 1) %}
         <li class="page-item {% if page == current_page %}active{% endif %}">
           <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='admins', page=page) }}">{{ page }}</a>
         </li>

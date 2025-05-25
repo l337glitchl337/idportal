@@ -243,7 +243,7 @@ def create_admin(first_name, last_name, username, password, email, role) -> bool
     
     return True
 
-def populate_admin_panel(page=1, per_page=10) -> dict:
+def populate_admin_panel(page=1, per_page=15) -> dict:
     params = get_db_params()
     admins = []
     pending_requests = []
@@ -262,7 +262,7 @@ def populate_admin_panel(page=1, per_page=10) -> dict:
         admin_next_page = page + 1 if page < admin_pages else None
 
         if session["role"] == "super":
-            cursor.execute("select first_name || ' ' || last_name as full_name, email, username, role from admins limit %s offset %s", (per_page, offset))
+            cursor.execute("select first_name || ' ' || last_name as full_name, email, username, role, id from admins order by id limit %s offset %s", (per_page, offset))
             rows = cursor.fetchall()
 
             for row in rows:
@@ -272,29 +272,42 @@ def populate_admin_panel(page=1, per_page=10) -> dict:
                 d["username"] = row[2]
                 d["role"] = row[3]
                 admins.append(d)
-            
-            cursor.execute("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
-                        to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
-                        photo_filepath, license_filepath, request_id
-                        from submissions where status='N'""")
-            rows = cursor.fetchall()
 
-            for row in rows:
-                d = {}
-                d["full_name"] = row[0]
-                d["email"] = row[1]
-                d["student_id"] = row[2] 
-                d["campus"] = row[3]
-                d["timestamp_inserted"] = row[4]
-                d["photo_filepath"] = row[5]
-                d["license_filepath"] = row[6]
-                d["request_id"] = row[7]
-                pending_requests.append(d)
+        cursor.execute("select count(*) from submissions where status='N'")
+        total_pending = cursor.fetchone()[0]
+        pending_pages = (total_pending + per_page - 1) // per_page
+        pending_previous_page = page - 1 if page > 1 else None
+        pending_next_page = page + 1 if page < pending_pages else None
+        
+        cursor.execute("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
+                    to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
+                    photo_filepath, license_filepath, request_id
+                    from submissions where status='N' order by request_id limit %s offset %s""", (per_page, offset))
+        rows = cursor.fetchall()
+
+        for row in rows:
+            d = {}
+            d["full_name"] = row[0]
+            d["email"] = row[1]
+            d["student_id"] = row[2] 
+            d["campus"] = row[3]
+            d["timestamp_inserted"] = row[4]
+            d["photo_filepath"] = row[5]
+            d["license_filepath"] = row[6]
+            d["request_id"] = row[7]
+            pending_requests.append(d)
+
+        
+        cursor.execute("select count(*) from submissions where status='R'")
+        total_rejected = cursor.fetchone()[0]
+        rejected_pages = (total_rejected + per_page - 1) // per_page
+        rejected_previous_page = page - 1 if page > 1 else None
+        rejected_next_page = page + 1 if page < rejected_pages else None
 
         cursor.execute("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
                        to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
                        photo_filepath, license_filepath, comments, request_id
-                       from submissions where status='R'""")
+                       from submissions where status='R' order by request_id limit %s offset %s""", (per_page, offset))
         rows = cursor.fetchall()
 
         for row in rows:
@@ -309,11 +322,17 @@ def populate_admin_panel(page=1, per_page=10) -> dict:
             d["comments"] = row[7]
             d["request_id"] = row[8]
             rejected_requests.append(d)
+        
+        cursor.execute("select count(*) from submissions where status='A'")
+        total_approved = cursor.fetchone()[0]
+        approved_pages = (total_approved + per_page - 1) // per_page
+        approved_previous_page = page - 1 if page > 1 else None
+        approved_next_page = page + 1 if page < approved_pages else None
 
         cursor.execute("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
                        to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
                        photo_filepath, license_filepath, request_id
-                       from submissions where status='A'""")
+                       from submissions where status='A' order by request_id limit %s offset %s""", (per_page, offset))
         rows = cursor.fetchall()
 
         for row in rows:
@@ -336,8 +355,32 @@ def populate_admin_panel(page=1, per_page=10) -> dict:
         if conn:
             conn.close()
             return False
-    return admins, pending_requests, rejected_requests, approved_requests, admin_prev_page, admin_next_page, admin_pages
-
+    return {
+        "admins": admins,
+        "pending_requests": pending_requests,
+        "rejected_requests": rejected_requests,
+        "approved_requests": approved_requests,
+        "admin_pagination": {
+            "prev_page": admin_prev_page,
+            "next_page": admin_next_page,
+            "total_pages": admin_pages,
+        },
+        "approved_pagination": {
+            "total_pages": approved_pages,
+            "next_page": approved_next_page,
+            "prev_page": approved_previous_page,
+        },
+        "rejected_pagination": {
+            "total_pages": rejected_pages,
+            "next_page": rejected_next_page,
+            "prev_page": rejected_previous_page,
+        },
+        "pending_pagination": {
+            "total_pages": pending_pages,
+            "next_page": pending_next_page,
+            "prev_page": pending_previous_page,
+        }
+    }
 def create_submission(photo_filepath, license_filepath):
     first_name = session["first_name"][0].decode()
     last_name = session["last_name"][0].decode()

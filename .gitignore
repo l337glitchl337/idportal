@@ -5,3 +5,4 @@ static/uploads/**
 *.bak
 venv/
 __pycache__/
+instance/config.py

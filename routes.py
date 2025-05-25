@@ -4,6 +4,7 @@ from ldap_functions import *
 from flask_mail import Message
 from extensions import mail
 import os
+import traceback
 
 blueprint = Blueprint("main", __name__)
 
@@ -117,16 +118,24 @@ def create_admin_account():
     return redirect(url_for("main.admin_panel"))
 
 @blueprint.route("/logout")
-@check_admin_login
 def logout():
+    user_type = 0
+    if "admin_username" in session:
+        user_type = 1
     try:
+        flashes = session.get('_flashes', [])
         session.clear()
-    except:
+        session['_flashes'] = flashes
+    except Exception:
         print(traceback.format_exc())
         flash("Error: Unable to logout. Please try again later", "danger")
-        return redirect(url_for("main.admin_panel"))
-    flash("Logged out successfully!", "success")
-    return redirect(url_for("main.admin"))
+        if user_type:
+            return redirect(url_for("main.admin_panel"))
+        return redirect(url_for("main.home"))
+    if user_type:
+        flash("Logged out successfully!", "success")
+        return redirect(url_for("main.admin"))
+    return redirect(url_for("main.home"))
 
 @blueprint.route("/reject_submissiion", methods=["POST"])
 @check_admin_login

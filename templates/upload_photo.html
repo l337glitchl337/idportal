@@ -93,9 +93,7 @@
             <img id="dl-preview-img" class="img-thumbnail preview-img" alt="License Preview">
           </div>
 
-          <button type="submit" class="btn btn-primary w-100">
-            Submit Documents
-          </button>
+          <button type="submit" class="btn btn-primary w-100" id="submit-btn" style="display:none;"></button>
         </form>
       </div>
     </div>
@@ -113,7 +111,10 @@
     const previewSection = document.getElementById('preview-section');
     const previewImage   = document.getElementById('preview');
     const cropBtn        = document.getElementById('crop-btn');
+    const submitBtn      = document.getElementById('submit-btn');
     let cropper;
+    let idCropped = false;
+    let dlChosen = false;
 
     // Validate file type & size for ID photo
     function validateFile(file) {
@@ -121,8 +122,21 @@
       return types.includes(file.type) && file.size <= 10*1024*1024;
     }
 
+    function updateSubmitState() {
+      // Show the submit button only if both conditions are met
+      if (idCropped && dlChosen) {
+        submitBtn.style.display = 'block';
+        submitBtn.textContent = 'Submit Documents';
+      } else {
+        submitBtn.style.display = 'none';
+        submitBtn.textContent = '';
+      }
+    }
+
     idInput.addEventListener('change', e => {
       const file = e.target.files[0];
+      idCropped = false;
+      updateSubmitState();
       if (!file || !validateFile(file)) {
         alert('Please select a JPG/PNG/WEBP under 10 MB.');
         idInput.value = '';
@@ -174,6 +188,8 @@
         cropBtn.style.display = 'none';
         cropper.destroy();
         cropper = null;
+        idCropped = true;
+        updateSubmitState();
       }, 'image/png');
     });
 
@@ -184,6 +200,8 @@
 
     dlInput.addEventListener('change', e => {
       const file = e.target.files[0];
+      dlChosen = false;
+      updateSubmitState();
       if (!file) return;
       if (!validateFile(file)) {
         alert('Please select a JPG/PNG/WEBP under 10 MB.');
@@ -193,6 +211,8 @@
       }
       dlPreviewImg.src = URL.createObjectURL(file);
       dlPreviewContainer.style.display = 'block';
+      dlChosen = true;
+      updateSubmitState();
     });
   </script>
 {% endblock %}

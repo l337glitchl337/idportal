@@ -80,7 +80,7 @@ def admin():
         if admin_login(username, password):
             if session["on_login"]:
                 flash("Please change your password before proceeding", "danger")
-                return redirect(url_for("main.first_login"))
+                return redirect(url_for("main.change_admin_password"))
             return redirect(url_for("main.admin_panel"))
         else:
             flash("Invalid username/password combination", "danger")
@@ -159,43 +159,30 @@ def approve_submission():
     else:
         return {"success": False, "message": "Failed to approve submission. Please check logs for more details"}
     
-@blueprint.route("/first_login", methods=["POST", "GET"])
+@blueprint.route("/change_admin_password", methods=["POST", "GET"])
 @check_admin_login
-def first_login():
+def change_admin_password():
     if request.method == "GET":
-        return render_template("first_login.html")
+        return render_template("change_admin_password.html")
     elif request.method == "POST":
+        current_password = request.form.get("current_password")
+        if not compare_password(session["admin_username"], current_password):
+            flash("Current password is incorrect", "danger")
+            return redirect(url_for("main.change_admin_password"))
         new_password = request.form.get("new_password")
         confirm_password = request.form.get("confirm_password")
         if new_password != confirm_password:
             flash("Passwords do not match", "danger")
-            return redirect(url_for("main.first_login"))
-        if change_admin_password(session["admin_username"], new_password):
+            return redirect(url_for("main.change_admin_password"))
+        if update_admin_password(session["admin_username"], new_password):
             session.clear()
             flash("Password changed successfully!", "success")
             return redirect(url_for("main.admin"))
         else:
             flash("Error changing password, please try again!", "danger")
-            return redirect(url_for("main.first_login"))
+            return redirect(url_for("main.change_admin_password"))
         
-@blueprint.route("/update_admin_password", methods=["POST"])
-@check_admin_login
-@check_first_login
-def update_admin_password():
-    current_password = request.form.get("current_password")
-    new_password = request.form.get("new_password")
-    confirm_password = request.form.get("confirm_password")
-    
-    if compare_password(session["admin_username"], current_password):
-        if new_password != confirm_password:
-            flash("Passwords do not match", "danger")
-            return redirect(url_for("main.admin_panel"))
-        if change_admin_password(session["admin_username"], new_password):
-            flash("Password changed successfully!", "success")
-            return redirect(url_for("main.admin_panel"))
-        else:
-            flash("Error changing password, please try again!", "danger")
-            return redirect(url_for("main.admin_panel"))
-    else:
-        flash("Current password is incorrect", "danger")
-        return redirect(url_for("main.admin_panel"))
+@blueprint.route("/forgot_password", methods=["POST", "GET"])
+def admin_forgot_password():
+    if request.method == "GET":
+        return render_template("admin_forgot_password.html")

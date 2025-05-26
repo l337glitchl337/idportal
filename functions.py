@@ -447,7 +447,7 @@ def reject_request(request_id, comments) -> bool:
         return False
     return True
 
-def change_admin_password(username, new_password) -> bool:
+def update_admin_password(username, new_password) -> bool:
     params = get_db_params()
 
     new_password = new_password.encode('utf-8')

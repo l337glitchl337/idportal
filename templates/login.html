@@ -2,37 +2,13 @@
 
 {% block title %}Log In – {{ SITE_TITLE }}{% endblock %}
 
-{% block head %}
-  <style>
-    /* Tighter margins around the ID‑card image */
-    .id-card-img {
-      max-width: 320px;
-      margin: 0.5rem auto;
-      display: block;
-    }
-    /* Optional: page title styling */
-    .page-title {
-      font-size: 1.75rem;
-      margin-bottom: 1.5rem;
-      color: #fff;
-    }
-    /* Remove background, border & shadow from the wrapper */
-    .login-wrapper {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      padding: 0; /* if you want to collapse extra padding */
-    }
-  </style>
-{% endblock %}
-
 {% block content %}
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
       <!-- Page title -->
-      <h1 class="text-center page-title">{{ SITE_TITLE }}</h1>
+      <h1 class="text-center page-title" style="font-size: 1.75rem; margin-bottom: 1.5rem; color: #fff">{{ SITE_TITLE }}</h1>
 
-      <div class="card login-wrapper">
+      <div class="card shadow">
         <div class="card-body text-center">
           <img src="{{ url_for('static', filename=LOGO) }}"
                alt="ID Card Template"

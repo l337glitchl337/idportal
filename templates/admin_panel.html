@@ -357,7 +357,7 @@
     <div class="tab-pane fade {% if active_tab == 'profile' %}show active{% endif %}" id="profile">
       <div class="card bg-secondary text-white shadow-lg rounded-4 p-4 profile-form">
         <h4 class="mb-3">Edit Account</h4>
-        <form method="POST" action="{{ url_for('main.update_admin_password') }}">
+        <form method="POST" action="{{ url_for('main.change_admin_password') }}">
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
             <input type="text" class="form-control" id="username" name="username" value="{{ current_user.username }}" disabled>

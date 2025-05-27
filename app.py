@@ -8,7 +8,7 @@ def create_app():
     env = app.config.get('ENV', 'production').title()
     app.config.from_object(f'config.{env}Config')
     app.config.from_pyfile('config.py', silent=True)
-    
+
     mail.init_app(app)
 
     from routes import blueprint
@@ -23,8 +23,11 @@ def create_app():
             "COMPANY_ADDRESS" : app.config["COMPANY_ADDRESS"],
             "COMPANY_STATE_ZIP" : app.config["COMPANY_STATE_ZIP"],
             "COMPANY_PHONE" : app.config["COMPANY_PHONE"],
-            "COMPANY_CURRENT_YEAR" : app.config["COMPANY_CURRENT_YEAR"]
-            }
+            "COMPANY_CURRENT_YEAR" : app.config["COMPANY_CURRENT_YEAR"],
+            "COMPANY_EMAIL_SIGNATURE" : app.config["COMPANY_EMAIL_SIGNATURE"],
+            "FORGOT_PASSWORD_URL" : app.config["FORGOT_PASSWORD_URL"],
+            "REVIEW_REQUEST_URL" : app.config["REVIEW_REQUEST_URL"]
+        }
     
     return app
 

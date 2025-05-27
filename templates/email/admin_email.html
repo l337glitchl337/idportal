@@ -59,11 +59,11 @@
           <li><strong>Submitted At:</strong> {{ request_time }}</li>
         </ul>
         <p style="text-align:center;">
-          <a href="{{ review_url }}" class="btn">Review Request</a>
+          <a href="{{ REVIEW_REQUEST_URL }}" class="btn">Review Request</a>
         </p>
         <p>If the button above doesn’t work, copy and paste this link into your browser:</p>
-        <p><a href="{{ review_url }}">{{ review_url }}</a></p>
-        <p>Thank you,<br>The Your Company Team</p>
+        <p><a href="{{ REVIEW_REQUEST_URL }}">{{ REVIEW_REQUEST_URL }}</a></p>
+        <p>Thank you,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
       </td>
     </tr>
     <tr>

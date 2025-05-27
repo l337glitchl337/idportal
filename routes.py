@@ -163,18 +163,23 @@ def approve_submission():
 @check_admin_login
 def change_admin_password():
     if request.method == "GET":
+        if "forgot_password_token" in session:
+            return render_template("change_admin_password.html", forgot_password=True)
         return render_template("change_admin_password.html")
+    
     elif request.method == "POST":
-        current_password = request.form.get("current_password")
-        if not compare_password(session["admin_username"], current_password):
-            flash("Current password is incorrect", "danger")
-            return redirect(url_for("main.change_admin_password"))
+        if "forgot_password_token" not in session:
+            current_password = request.form.get("current_password")
+            if not compare_password(session["admin_username"], current_password):
+                flash("Current password is incorrect", "danger")
+                return redirect(url_for("main.change_admin_password"))
         new_password = request.form.get("new_password")
         confirm_password = request.form.get("confirm_password")
         if new_password != confirm_password:
             flash("Passwords do not match", "danger")
             return redirect(url_for("main.change_admin_password"))
         if update_admin_password(session["admin_username"], new_password):
+            del_forgot_password_token(session["forgot_password_token"])
             session.clear()
             flash("Password changed successfully!", "success")
             return redirect(url_for("main.admin"))
@@ -197,8 +202,11 @@ def forgot_password():
     if request.method == "GET":
         if request.args.get("token"):
             token = request.args.get("token")
-            if validate_forgot_password_token(token):
-                return redirect(url_for("main.reset_password", token=token))
+            username = validate_forgot_password_token(token)
+            if username:
+                session["admin_username"] = username
+                session["forgot_password_token"] = token
+                return redirect(url_for("main.change_admin_password"))
             else:
                 flash("Invalid or expired token", "danger")
                 return redirect(url_for("main.admin"))

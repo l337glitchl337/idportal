@@ -1,6 +1,6 @@
 from werkzeug.utils import secure_filename
 from uuid import uuid4
-from flask import session, redirect, url_for, flash, current_app, render_template
+from flask import session, redirect, url_for, flash, current_app, render_template, request
 from functools import wraps
 from extensions import mail
 from flask_mail import Message
@@ -37,6 +37,12 @@ def check_login(f):
 def check_admin_login(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # Allow access to change_admin_password if forgot_password_token is set
+        if 'forgot_password_token' in session:
+            if request.endpoint == "main.change_admin_password":
+                return f(*args, **kwargs)
+            else:
+                return redirect(url_for("main.admin"))
         if 'admin_username' not in session:
             flash("Please login first", "danger")
             return redirect(url_for("main.admin"))
@@ -505,9 +511,9 @@ def send_forgot_password_email(**kwargs) -> bool:
         conn = psycopg2.connect(**params)
         cursor = conn.cursor()
         if "email" in kwargs:
-            cursor.execute("select first_name || ' ' || last_name, username, email from admins where email=%s", (kwargs["email"],))
+            cursor.execute("select first_name || ' ' || last_name, username, email, id from admins where email=%s", (kwargs["email"],))
         else:
-            cursor.execute("select first_name || ' ' || last_name, username, email from admins where username=%s", (kwargs["username"],))
+            cursor.execute("select first_name || ' ' || last_name, username, email, id from admins where username=%s", (kwargs["username"],))
         row = cursor.fetchone()
         if not row:
             print("No user found with the provided email or username.")
@@ -516,7 +522,13 @@ def send_forgot_password_email(**kwargs) -> bool:
         email = row[2]
         full_name = row[0]
         username = row[1]
-        url = gen_random_forgot_password_link()
+        user_id = row[3]
+        url, token = gen_random_forgot_password_link()
+
+        cursor.execute("insert into admin_forgot_password (user_id, token) values (%s, %s)", (user_id, token))
+        conn.commit()
+        cursor.close()
+        conn.close()
 
         html_body = render_template('email/forgot_password.html',
                                     full_name=full_name,
@@ -546,8 +558,44 @@ def send_forgot_password_email(**kwargs) -> bool:
         return False
     
 def gen_random_forgot_password_link() -> str:
-    random_string = uuid4().hex
-    return f"{current_app.config['FORGOT_PASSWORD_URL']}?token={random_string}"
+    token = uuid4().hex
+    return f"{current_app.config['FORGOT_PASSWORD_URL']}?token={token}", token
 
 def validate_forgot_password_token(token) -> bool:
+    params = get_db_params()
+    try:
+        conn = psycopg2.connect(**params)
+        cursor = conn.cursor()
+        cursor.execute("select a.username from admin_forgot_password b join admins a on b.user_id=a.id where token=%s and expire_after > now()", (token,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        username = row[0]
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return username
+    except:
+        print(traceback.format_exc())
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            return False
+def del_forgot_password_token(token) -> bool:
+    params = get_db_params()
+    try:
+        conn = psycopg2.connect(**params)
+        cursor = conn.cursor()
+        cursor.execute("delete from admin_forgot_password where token=%s", (token,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except:
+        print(traceback.format_exc())
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            return False
     return True

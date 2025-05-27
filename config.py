@@ -16,6 +16,7 @@ class BaseConfig:
     #Branding, title for the website and logo
     SITE_TITLE           = os.getenv("SITE_TITLE")
     LOGO                 = os.getenv("LOGO")
+    FORGOT_PASSWORD_URL  = os.getenv("FORGOT_PASSWORD_URL")
 
     #Email config
     MAIL_SERVER          = os.getenv("MAIL_SERVER")
@@ -32,6 +33,7 @@ class BaseConfig:
     PG_PWD               = os.getenv("PG_PWD")
     PG_HOST              = os.getenv("PG_HOST")
     PG_PORT              = os.getenv("PG_PORT")
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

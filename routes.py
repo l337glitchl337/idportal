@@ -5,6 +5,7 @@ from flask_mail import Message
 from extensions import mail
 import os
 import traceback
+import re
 
 blueprint = Blueprint("main", __name__)
 
@@ -85,7 +86,6 @@ def admin():
         else:
             flash("Invalid username/password combination", "danger")
             return redirect(url_for("main.admin"))
-        
     return render_template("admin.html")
 
 @blueprint.route("/admin_panel")
@@ -183,6 +183,15 @@ def change_admin_password():
             return redirect(url_for("main.change_admin_password"))
         
 @blueprint.route("/forgot_password", methods=["POST", "GET"])
-def admin_forgot_password():
-    if request.method == "GET":
-        return render_template("admin_forgot_password.html")
+def forgot_password():
+    if request.method == "POST":
+        identifier = request.form.get("identifier")
+        print(identifier)
+        is_email = re.match(r"^[^@]+@[^@]+\.[^@]+$", identifier)
+        if is_email:
+            send_forgot_password_email(**{"email": identifier})
+        else:
+            send_forgot_password_email(**{"username": identifier})
+        flash("If your account exists, you will receive an email with instructions to reset your password.", "info")
+        return redirect(url_for("main.admin"))
+    return render_template("admin_forgot_password.html")

@@ -498,3 +498,53 @@ def compare_password(username, current_password) -> bool:
         return False
     
     return True
+
+def send_forgot_password_email(**kwargs) -> bool:
+    params = get_db_params()
+    try:
+        conn = psycopg2.connect(**params)
+        cursor = conn.cursor()
+        if "email" in kwargs:
+            cursor.execute("select first_name || ' ' || last_name, username, email from admins where email=%s", (kwargs["email"],))
+        else:
+            cursor.execute("select first_name || ' ' || last_name, username, email from admins where username=%s", (kwargs["username"],))
+        row = cursor.fetchone()
+        if not row:
+            print("No user found with the provided email or username.")
+            return False
+        
+        email = row[2]
+        full_name = row[0]
+        username = row[1]
+        url = gen_random_forgot_password_link()
+
+        html_body = render_template('email/forgot_password.html',
+                                    full_name=full_name,
+                                    username=username,
+                                    url=url)
+        msg = Message(subject="Forgot Password Request",
+                        recipients=[email],
+                        html=html_body)
+        try:
+            with mail.connect() as conn:
+                conn.send(msg)
+        except:
+            print("*******************")
+            print("Error sending email")
+            print("*******************")
+            print(traceback.format_exc())
+            return False
+    except:
+        print("***************************")
+        print("Error - Postgres SQL Error.")
+        print("***************************")
+        print(traceback.format_exc())
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+        return False
+    
+def gen_random_forgot_password_link() -> str:
+    random_string = uuid4().hex
+    return f"{current_app.config['FORGOT_PASSWORD_URL']}?token={random_string}"

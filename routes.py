@@ -194,4 +194,12 @@ def forgot_password():
             send_forgot_password_email(**{"username": identifier})
         flash("If your account exists, you will receive an email with instructions to reset your password.", "info")
         return redirect(url_for("main.admin"))
-    return render_template("admin_forgot_password.html")
+    if request.method == "GET":
+        if request.args.get("token"):
+            token = request.args.get("token")
+            if validate_forgot_password_token(token):
+                return redirect(url_for("main.reset_password", token=token))
+            else:
+                flash("Invalid or expired token", "danger")
+                return redirect(url_for("main.admin"))
+        return render_template("admin_forgot_password.html")

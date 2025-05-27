@@ -17,6 +17,11 @@ class BaseConfig:
     SITE_TITLE           = os.getenv("SITE_TITLE")
     LOGO                 = os.getenv("LOGO")
     FORGOT_PASSWORD_URL  = os.getenv("FORGOT_PASSWORD_URL")
+    COMPANY_NAME         = os.getenv("COMPANY_NAME")
+    COMPANY_ADDRESS      = os.getenv("COMPANY_ADDRESS")
+    COMPANY_STATE_ZIP    = os.getenv("COMPANY_STATE_ZIP")
+    COMPANY_PHONE        = os.getenv("COMPANY_PHONE")
+    COMPANY_CURRENT_YEAR = os.getenv("COMPANY_CURRENT_YEAR")
 
     #Email config
     MAIL_SERVER          = os.getenv("MAIL_SERVER")

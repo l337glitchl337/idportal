@@ -28,7 +28,12 @@ def create_app():
     def inject():
         return {
             "SITE_TITLE" : app.config["SITE_TITLE"],
-            "LOGO"       : app.config["LOGO"]
+            "LOGO"       : app.config["LOGO"],
+            "COMPANY_NAME" : app.config["COMPANY_NAME"],
+            "COMPANY_ADDRESS" : app.config["COMPANY_ADDRESS"],
+            "COMPANY_STATE_ZIP" : app.config["COMPANY_STATE_ZIP"],
+            "COMPANY_PHONE" : app.config["COMPANY_PHONE"],
+            "COMPANY_CURRENT_YEAR" : app.config["COMPANY_CURRENT_YEAR"],
             }
     
     return app

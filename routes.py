@@ -1,8 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, Blueprint, current_app, session
 from functions import *
 from ldap_functions import *
-from flask_mail import Message
-from extensions import mail
 import os
 import traceback
 import re
@@ -115,7 +113,7 @@ def create_admin_account():
         send_welcome_email(username, password, first_name, email)
     else:
         flash("Failed to create admin account. Please check logs for more details", "danger")
-    return redirect(url_for("main.admin_panel"))
+    return redirect(url_for("main.admin_panel", active_tab="admins"))
 
 @blueprint.route("/logout")
 def logout():
@@ -142,7 +140,6 @@ def logout():
 @check_first_login
 def reject_submission():
     request_id = request.form.get("request_id")
-    print(request_id)
     comments = request.form.get("comments")
     if reject_request(request_id, comments):
         return {"success": True, "message": "Submission rejected successfully!"}
@@ -172,14 +169,15 @@ def change_admin_password():
             current_password = request.form.get("current_password")
             if not compare_password(session["admin_username"], current_password):
                 flash("Current password is incorrect", "danger")
-                return redirect(url_for("main.change_admin_password"))
+                return redirect(url_for("main.admin_panel", active_tab="profile"))
         new_password = request.form.get("new_password")
         confirm_password = request.form.get("confirm_password")
         if new_password != confirm_password:
             flash("Passwords do not match", "danger")
             return redirect(url_for("main.change_admin_password"))
         if update_admin_password(session["admin_username"], new_password):
-            del_forgot_password_token(session["forgot_password_token"])
+            if "forgot_password_token" in session:
+                del_forgot_password_token(session["forgot_password_token"])
             session.clear()
             flash("Password changed successfully!", "success")
             return redirect(url_for("main.admin"))
@@ -191,7 +189,6 @@ def change_admin_password():
 def forgot_password():
     if request.method == "POST":
         identifier = request.form.get("identifier")
-        print(identifier)
         is_email = re.match(r"^[^@]+@[^@]+\.[^@]+$", identifier)
         if is_email:
             send_forgot_password_email(**{"email": identifier})
@@ -211,3 +208,30 @@ def forgot_password():
                 flash("Invalid or expired token", "danger")
                 return redirect(url_for("main.admin"))
         return render_template("admin_forgot_password.html")
+    
+@blueprint.route("/batch_edit", methods=["POST"])
+@check_admin_login
+@check_first_login
+def batch_edit():
+    request_ids = request.form.getlist("request_ids")
+    action = request.form.get("action")
+    comments = request.form.get("comments", "")
+    errors = {}
+
+    if action == "approve":
+        for request_id in request_ids:
+            if not approve_request(request_id):
+                errors[request_id] = "Failed to approve request"
+        if errors:
+            return {"success": False, "message": "Failed to approve one or more requests", "errors": errors}
+        return {"success": True, "message": "All submissions approved successfully!"}
+    elif action == "reject":
+        for request_id in request_ids:
+            if not reject_request(request_id, comments):
+                errors[request_id] = "Failed to reject request"
+        if errors:
+            return {"success": False, "message": "Failed to reject one or more requests", "errors": errors}
+        return {"success": True, "message": "All submissions rejected successfully!"}
+    else:
+        flash("Invalid action selected", "danger")
+        return redirect(url_for("main.admin_panel"))

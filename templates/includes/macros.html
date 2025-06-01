@@ -1,0 +1,41 @@
+{% macro modal(id, title, body_id, footer_buttons) %}
+<div class="modal fade" id="{{ id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-secondary text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="{{ id }}Title">{{ title }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="{{ body_id }}"></p>
+        <div id="{{ id }}Errors" class="text-danger"></div>
+      </div>
+      <div class="modal-footer">
+        {{ footer_buttons|safe }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro pagination(pagination, active_tab, current_page) %}
+<nav aria-label="{{ active_tab.capitalize() }} Pagination">
+  <ul class="pagination justify-content-center">
+    {% if pagination.prev_page %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('main.admin_panel', active_tab=active_tab, page=pagination.prev_page) }}">Previous</a>
+    </li>
+    {% endif %}
+    {% for page in range(1, pagination.total_pages + 1) %}
+    <li class="page-item {% if page == current_page %}active{% endif %}">
+      <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab=active_tab, page=page) }}">{{ page }}</a>
+    </li>
+    {% endfor %}
+    {% if pagination.next_page %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('main.admin_panel', active_tab=active_tab, page=pagination.next_page) }}">Next</a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endmacro %}

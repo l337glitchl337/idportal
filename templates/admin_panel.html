@@ -3,84 +3,66 @@
 {% block title %}Admin Panel – {{ SITE_TITLE }}{% endblock %}
 
 {% block head %}
-  <style>
-    .nav-pills .nav-link.active { background-color: #007bff; }
-    .table-actions button { margin-right: 0.5rem; }
-    .modal-body textarea { resize: none; }
-    .bulk-actions { margin-bottom: 1rem; }
-    .photo-btn { color: #0dcaf0; }
-  </style>
-{% endblock %} 
-
-
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_panel.css') }}">
+{% endblock %}
 
 {% block content %}
-
-<!-- {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="my-4">
-              {% for category, msg in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show py-3 px-4 mb-3" role="alert">
-                  <div class="text-center">{{ msg }}</div>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %} -->
 <div class="container py-4">
   <h2 class="text-white mb-4">Admin Panel</h2>
   <ul class="nav nav-pills mb-3" id="admin-tab" role="tablist">
     <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'pending' %}active{% endif %}" 
-           href="{{ url_for('main.admin_panel', active_tab='pending') }}">Pending Requests</a>
+      <a class="nav-link {% if active_tab == 'pending' %}active{% endif %}" href="{{ url_for('main.admin_panel', active_tab='pending') }}">Pending Requests</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'approved' %}active{% endif %}" 
-           href="{{ url_for('main.admin_panel', active_tab='approved') }}">Approved</a>
+      <a class="nav-link {% if active_tab == 'approved' %}active{% endif %}" href="{{ url_for('main.admin_panel', active_tab='approved') }}">Approved</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'rejected' %}active{% endif %}" 
-           href="{{ url_for('main.admin_panel', active_tab='rejected') }}">Rejected</a>
+      <a class="nav-link {% if active_tab == 'rejected' %}active{% endif %}" href="{{ url_for('main.admin_panel', active_tab='rejected') }}">Rejected</a>
     </li>
     {% if current_user.role == 'super' %}
-      <li class="nav-item">
-          <a class="nav-link {% if active_tab == 'admins' %}active{% endif %}" 
-            href="{{ url_for('main.admin_panel', active_tab='admins') }}">Manage Admins</a>
-      </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'admins' %}active{% endif %}" href="{{ url_for('main.admin_panel', active_tab='admins') }}">Manage Admins</a>
+    </li>
     {% endif %}
     <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}" 
-           href="{{ url_for('main.admin_panel', active_tab='profile') }}">My Profile</a>
+      <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}" href="{{ url_for('main.admin_panel', active_tab='profile') }}">My Profile</a>
     </li>
     <li class="nav-item">
       <a href="/logout" class="btn btn-danger" role="button">Log out</a>
     </li>
-</ul>
+  </ul>
 
   <div class="tab-content">
+    <!-- Pending Requests -->
     <div class="tab-pane fade {% if active_tab == 'pending' %}show active{% endif %}" id="pending">
+      {% if pending_requests|length > 0 %}
       <div class="bulk-actions">
-        <button class="btn btn-sm btn-success"
-            data-bs-toggle="modal"
-            data-bs-target="#resultModal"
-            data-result-type="success"
-            data-result-message="Selected submissions approved successfully.">Approve Selected</button>
-        <button class="btn btn-sm btn-danger"
-            data-bs-toggle="modal"
-            data-bs-target="#rejectModal">Reject Selected</button>
+        <button class="btn btn-sm btn-success" id="approveSelectedBtn">Approve Selected</button>
+        <button class="btn btn-sm btn-danger" id="rejectSelectedBtn">Reject Selected</button>
       </div>
+      {% endif %}
       <table class="table table-dark table-hover">
         <thead>
           <tr>
+            {% if pending_requests|length > 0 %}
             <th><input type="checkbox" id="selectAllPending"></th>
-            <th>Request ID</th><th>Name</th><th>Email</th><th>Student ID</th><th>Campus</th><th>Time</th><th>Photo</th><th>Actions</th>
+            {% else %}
+            <th></th>
+            {% endif %}
+            <th>Request ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Student ID</th>
+            <th>Campus</th>
+            <th>Time</th>
+            <th>Photo</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for req in pending_requests %}
           <tr>
-            <td><input type="checkbox" class="pending-checkbox" value="{{ req.student_id }}"></td>
+            <td><input type="checkbox" class="pending-checkbox" value="{{ req.request_id }}"></td>
             <td>{{ req.request_id }}</td>
             <td>{{ req.full_name }}</td>
             <td>{{ req.email }}</td>
@@ -89,48 +71,24 @@
             <td>{{ req.timestamp_inserted }}</td>
             <td>
               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                  data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
-                  data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
+                data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
                 View Photos
               </button>
             </td>
-            <td class="table-actions">
-              <button class="btn btn-sm btn-success"
-                  data-bs-toggle="modal"
-                  data-bs-target="#resultModal"
-                  data-result-type="success"
-                  data-result-message="Request {{ req.request_id }} approved."
-                  data-request-id="{{ req.request_id }}">Approve</button>
-              <button class="btn btn-sm btn-danger"
-                  data-bs-toggle="modal"
-                  data-bs-target="#rejectModal"
-                  data-id="{{ req.request_id }}">Reject</button>
+            <td>
+              <button class="btn btn-sm btn-success" data-request-id="{{ req.request_id }}" data-bs-toggle="modal" data-bs-target="#resultModal" data-action="approve">Approve</button>
+              <button class="btn btn-sm btn-danger" data-request-id="{{ req.request_id }}" data-bs-toggle="modal" data-bs-target="#rejectModal" data-action="reject">Reject</button>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-      <nav aria-label="Pending Pagination">
-      <ul class="pagination justify-content-center">
-        {% if pending_pagination.prev_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='pending', page=pending_pagination.prev_page) }}">Previous</a>
-        </li>
-        {% endif %}
-        {% for page in range(1, pending_pagination.total_pages + 1) %}
-        <li class="page-item {% if page == current_page %}active{% endif %}">
-          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='pending', page=page) }}">{{ page }}</a>
-        </li>
-        {% endfor %}
-        {% if pending_pagination.next_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='pending', page=pending_pagination.next_page) }}">Next</a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
+      {% import 'includes/macros.html' as macros %}
+      {{ macros.pagination(pending_pagination, 'pending', current_page) }}
     </div>
 
+    <!-- Approved Requests -->
     <div class="tab-pane fade {% if active_tab == 'approved' %}show active{% endif %}" id="approved">
       <table class="table table-dark table-hover">
         <thead>
@@ -155,8 +113,8 @@
             <td>{{ req.timestamp_inserted }}</td>
             <td>
               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                      data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
-                      data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
+                data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
                 View Photos
               </button>
             </td>
@@ -164,193 +122,87 @@
           {% endfor %}
         </tbody>
       </table>
-       <nav aria-label="Approved Pagination">
-      <ul class="pagination justify-content-center">
-        {% if approved_pagination.prev_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='approved', page=approved_pagination.prev_page) }}">Previous</a>
-        </li>
-        {% endif %}
-        {% for page in range(1, approved_pagination.total_pages + 1) %}
-        <li class="page-item {% if page == current_page %}active{% endif %}">
-          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='approved', page=page) }}">{{ page }}</a>
-        </li>
-        {% endfor %}
-        {% if approved_pagination.next_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='approved', page=approved_pagination.next_page) }}">Next</a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
+      {{ macros.pagination(approved_pagination, 'approved', current_page) }}
     </div>
 
     <!-- Rejected Requests -->
     <div class="tab-pane fade {% if active_tab == 'rejected' %}show active{% endif %}" id="rejected">
       <table class="table table-dark table-hover">
-      <thead>
-        <tr>
-        <th>Request ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Student ID</th>
-        <th>Campus</th>
-        <th>Time</th>
-        <th>Comments</th>
-        <th>Photo</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for req in rejected_requests %}
-        <tr>
-        <td>{{ req.request_id }}</td>
-        <td>{{ req.full_name }}</td>
-        <td>{{ req.email }}</td>
-        <td>{{ req.student_id }}</td>
-        <td>{{ req.campus }}</td>
-        <td>{{ req.timestamp_inserted }}</td>
-        <td>
-          <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#commentsModal"
-              data-comments="{{ req.comments|e }}">
-          View Comments
-          </button>
-        </td>
-        <td>
-          <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-              data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
-              data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
-          View Photos
-          </button>
-        </td>
-        </tr>
-        {% endfor %}
-      </tbody>
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Student ID</th>
+            <th>Campus</th>
+            <th>Time</th>
+            <th>Comments</th>
+            <th>Photo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in rejected_requests %}
+          <tr>
+            <td>{{ req.request_id }}</td>
+            <td>{{ req.full_name }}</td>
+            <td>{{ req.email }}</td>
+            <td>{{ req.student_id }}</td>
+            <td>{{ req.campus }}</td>
+            <td>{{ req.timestamp_inserted }}</td>
+            <td>
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#commentsModal"
+                data-comments="{{ req.comments|e }}">
+                View Comments
+              </button>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
+                data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
+                data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                View Photos
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
-      <nav aria-label="Rejected Pagination">
-      <ul class="pagination justify-content-center">
-        {% if rejected_pagination.prev_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='rejected', page=rejected_pagination.prev_page) }}">Previous</a>
-        </li>
-        {% endif %}
-        {% for page in range(1, rejected_pagination.total_pages + 1) %}
-        <li class="page-item {% if page == current_page %}active{% endif %}">
-          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='rejected', page=page) }}">{{ page }}</a>
-        </li>
-        {% endfor %}
-        {% if rejected_pagination.next_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='rejected', page=rejected_pagination.next_page) }}">Next</a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
+      {{ macros.pagination(rejected_pagination, 'rejected', current_page) }}
     </div>
-
-    <!-- Comments Modal -->
-    <div class="modal fade" id="commentsModal" tabindex="-1">
-      <div class="modal-dialog">
-      <div class="modal-content bg-secondary text-white">
-        <div class="modal-header">
-        <h5 class="modal-title">Rejection Comments</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-        <p id="commentsModalBody" class="mb-0"></p>
-        </div>
-        <div class="modal-footer">
-        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-      </div>
-    </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-      var commentsModal = document.getElementById('commentsModal');
-      commentsModal.addEventListener('show.bs.modal', function(event) {
-        var btn = event.relatedTarget;
-        var comments = btn.getAttribute('data-comments') || '';
-        document.getElementById('commentsModalBody').textContent = comments;
-      });
-      });
-    </script>
 
     <!-- Manage Admins -->
     {% if current_user.role == 'super' %}
-      <!-- Manage Admins tab entry -->
-      <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Show Manage Admins tab if user is super
-        document.querySelectorAll('ul#admin-tab li').forEach(function(li) {
-        var btn = li.querySelector('button[data-bs-target="#admins"]');
-        if (btn) {
-          li.style.display = '';
-        }
-        });
-      });
-      </script>
-      <div class="tab-pane fade {% if active_tab == 'admins' %}show active{% endif %}" id="admins">
+    <div class="tab-pane fade {% if active_tab == 'admins' %}show active{% endif %}" id="admins">
       <div class="d-flex justify-content-end mb-3">
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#adminModal">Create Admin</button>
+        <button class="btn btn-primary" id="createAdminBtn">Create Admin</button>
       </div>
       <table class="table table-dark table-hover">
-      <thead>
-        <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Username</th>
-        <th>Role</th>
-        <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for admin in admins %}
-        <tr>
-        <td>{{ admin.full_name }}</td>
-        <td>{{ admin.email }}</td>
-        <td>{{ admin.username }}</td>
-        <td>{{ admin.role }}</td>
-        <td class="table-actions">
-        <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#adminModal"
-        data-admin='{{ admin|tojson }}'>Edit</button>
-        <button class="btn btn-sm btn-danger">Delete</button>
-        </td>
-        </tr>
-        {% endfor %}
-      </tbody>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for admin in admins %}
+          <tr>
+            <td>{{ admin.full_name }}</td>
+            <td>{{ admin.email }}</td>
+            <td>{{ admin.username }}</td>
+            <td>{{ admin.role }}</td>
+            <td>
+              <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#adminModal"
+                data-admin='{{ admin|tojson }}'>Edit</button>
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
-    <nav aria-label="Admins Pagination">
-      <ul class="pagination justify-content-center">
-        {% if admin_prev_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='admins', page=admin_prev_page) }}">Previous</a>
-        </li>
-        {% endif %}
-        {% for page in range(1, admin_pagination.total_pages + 1) %}
-        <li class="page-item {% if page == current_page %}active{% endif %}">
-          <a class="page-link {% if page == current_page %}bg-primary text-white border-primary{% endif %}" href="{{ url_for('main.admin_panel', active_tab='admins', page=page) }}">{{ page }}</a>
-        </li>
-        {% endfor %}
-        {% if admin_next_page %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('main.admin_panel', active_tab='admins', page=admin_next_page) }}">Next</a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
+      {{ macros.pagination(admin_pagination, 'admins', current_page) }}
     </div>
-    {% else %}
-      <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Hide Manage Admins tab if user is not super
-        document.querySelectorAll('ul#admin-tab li').forEach(function(li) {
-        var btn = li.querySelector('button[data-bs-target="#admins"]');
-        if (btn) {
-          li.style.display = 'none';
-        }
-        });
-      });
-      </script>
     {% endif %}
 
     <!-- My Profile -->
@@ -387,281 +239,24 @@
   </div>
 </div>
 
-{# Reject Modal #}
-<div class="modal fade" id="rejectModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content bg-secondary text-white">
-      <div class="modal-header">
-        <h5 class="modal-title">Reject Request</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="rejectForm" method="POST" action="{{ url_for('main.reject_submission') }}">
-        <div class="modal-body">
-          <input type="hidden" id="rejectRequestId" name="request_id">
-          <div class="mb-3">
-            <label for="rejectReason" class="form-label">Reason (max 250 chars)</label>
-            <textarea class="form-control" id="rejectReason" name="comments" rows="3" maxlength="250" required></textarea>
-            <div class="form-text text-end text-white" id="charCount">250 characters remaining</div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger" id="submitReject">Submit</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-{# Photo Modal #}
-<div class="modal fade" id="photoModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content bg-secondary text-white">
-      <div class="modal-header">
-        <h5 class="modal-title">Submission Photos</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body text-center">
-        <div class="mb-3">
-          <div class="fw-bold mb-1">User Photo</div>
-          <img id="userPhoto" src="" alt="User Photo" class="img-fluid" style="max-height:200px;">
-        </div>
-        <div>
-          <div class="fw-bold mb-1">Driver's License</div>
-          <img id="licensePhoto" src="" alt="License Photo" class="img-fluid" style="max-height:200px;">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-{# Result Modal #}
-<div class="modal fade" id="resultModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content bg-secondary text-white">
-      <div class="modal-header">
-        <h5 class="modal-title" id="resultModalTitle"></h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p id="resultModalMessage"></p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Removed duplicate approve button click handler script block to prevent errors -->
-
-{# create admin modal #}
-<div class="modal fade" id="adminModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content bg-secondary text-white">
-      <div class="modal-header">
-        <h5 class="modal-title" id="adminModalTitle">Create Admin</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="adminForm" method="POST" action="{{ url_for('main.create_admin_account') }}">
-        <div class="modal-body">
-          <input type="hidden" id="adminId" name="id" value="">
-          <div class="mb-3">
-            <label for="adminFirstName" class="form-label">First Name</label>
-            <input type="text" class="form-control" id="adminFirstName" name="first_name" required>
-          </div>
-          <div class="mb-3">
-            <label for="adminLastName" class="form-label">Last Name</label>
-            <input type="text" class="form-control" id="adminLastName" name="last_name" required>
-          </div>
-          <div class="mb-3">
-            <label for="adminEmail" class="form-label">Email</label>
-            <input type="email" class="form-control" id="adminEmail" name="email" required>
-          </div>
-          <div class="mb-3">
-            <label for="adminUsername" class="form-label">Username</label>
-            <input type="text" class="form-control" id="adminUsername" name="username" required>
-          </div>
-          <div class="mb-3">
-            <label for="adminPassword" class="form-label">Password</label>
-            <input type="password" class="form-control" id="adminPassword" name="password" required>
-          </div>
-          <div class="mb-3">
-            <label for="adminRole" class="form-label">Role</label>
-            <select class="form-select" id="adminRole" name="role" required>
-              <option value="manager">Manager</option>
-              <option value="super">Super</option>
-            </select>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="saveAdminBtn">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+<!-- Include modals -->
+{% import 'includes/macros.html' as macros %}
+{{ macros.modal('resultModal', 'Result', 'resultModalBody', '<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>'|safe) }}
+{{ macros.modal('rejectModal', 'Reject Request', 'rejectModalBody', '<button type="button" class="btn btn-danger" id="rejectConfirmBtn">Confirm</button>') }}
+{{ macros.modal('photoModal', 'Submission Photos', 'photoModalBody', '<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>'|safe) }}
+{{ macros.modal('commentsModal', 'Rejection Comments', 'commentsModalBody', '<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>') }}
+{{ macros.modal('adminModal', 'Create Admin', 'adminModalBody', '<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="saveAdminBtn">Save</button>') }}
+{{ macros.modal('createAdminModal', 'Create Admin Account', 'createAdminModalBody') }}
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Reject modal char count
-  var rejectModal = document.getElementById('rejectModal');
-  var textarea = document.getElementById('rejectReason');
-  var counter = document.getElementById('charCount');
-  function updateCharCount() {
-    var remaining = 250 - textarea.value.length;
-    counter.textContent = remaining + ' characters remaining';
-  }
-  textarea.addEventListener('input', updateCharCount);
-  rejectModal.addEventListener('show.bs.modal', function() {
-    textarea.value = '';
-    updateCharCount();
-  });
-
-  // Photo modal setup
-  var photoModal = document.getElementById('photoModal');
-  photoModal.addEventListener('show.bs.modal', function(event) {
-    var btn = event.relatedTarget;
-    var userSrc = btn.getAttribute('data-photo-user');
-    var licenseSrc = btn.getAttribute('data-photo-license');
-    photoModal.querySelector('#userPhoto').src = userSrc;
-    photoModal.querySelector('#licensePhoto').src = licenseSrc;
-  });
-
-  // Result modal setup
-  // Remove static title/message setting here to avoid overwriting AJAX result
-  var resultModal = document.getElementById('resultModal');
-  resultModal.addEventListener('show.bs.modal', function(event) {
-    // Do nothing here; title/message will be set by AJAX handlers
-  });
-
-  // Refresh page when resultModal is hidden (for approve/deny)
-  resultModal.addEventListener('hidden.bs.modal', function() {
-    // Only refresh if the modal was shown for approve/reject actions
-    // (You can refine this logic if you use resultModal for other things)
-    location.reload();
-  });
-
-  // Reject modal: inject ID
-  rejectModal.addEventListener('show.bs.modal', function(event) {
-    var btn = event.relatedTarget;
-    var id = btn.getAttribute('data-id');
-    document.getElementById('rejectRequestId').value = id;
-  });
-
-  // Bulk select
-  document.getElementById('selectAllPending').addEventListener('change', function() {
-    var checked = this.checked;
-    document.querySelectorAll('.pending-checkbox').forEach(cb => cb.checked = checked);
-  });
-
-  // Admin modal setup
-  var adminModalEl = document.getElementById('adminModal');
-  adminModalEl.addEventListener('show.bs.modal', function(event) {
-    var btn         = event.relatedTarget;
-    var titleEl     = adminModalEl.querySelector('.modal-title');
-    var form        = document.getElementById('adminForm');
-    var idInput     = form.querySelector('#adminId');
-    var emailInput  = form.querySelector('#adminEmail');
-    var userInput   = form.querySelector('#adminUsername');
-    var passInput   = form.querySelector('#adminPassword');
-    var roleSelect  = form.querySelector('#adminRole');
-
-    if (btn && btn.getAttribute('data-admin')) {
-      // EDIT mode
-      var admin = JSON.parse(btn.getAttribute('data-admin'));
-      titleEl.textContent    = 'Edit Admin';
-      idInput.value          = admin.id;
-      emailInput.value       = admin.email;
-      userInput.value        = admin.username;
-      passInput.value        = '';
-      roleSelect.value       = admin.role;
-    } else {
-      // CREATE mode
-      titleEl.textContent    = 'Create Admin';
-      idInput.value = emailInput.value = userInput.value = passInput.value = '';
-      roleSelect.value       = 'manager';
-    }
-  });
-
-  // Approve button click handler (fix modal title/message)
-  var resultModalEl = document.getElementById('resultModal');
-  var resultModalInstance = bootstrap.Modal.getOrCreateInstance(resultModalEl);
-
-  document.querySelectorAll('button[data-bs-target="#resultModal"][data-request-id]').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      var requestId = btn.getAttribute('data-request-id');
-      fetch("{{ url_for('main.approve_submission') }}", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "X-Requested-With": "XMLHttpRequest"
-        },
-        body: new URLSearchParams({request_id: requestId})
-      })
-      .then(response => response.json())
-      .then(data => {
-        // Set correct title and message before showing the modal
-        document.getElementById('resultModalTitle').textContent = data.success ? "Success" : "Error";
-        document.getElementById('resultModalMessage').textContent = data.message || (data.success ? "Request approved." : "An error occurred.");
-        resultModalInstance.show();
-      })
-      .catch(() => {
-        document.getElementById('resultModalTitle').textContent = "Error";
-        document.getElementById('resultModalMessage').textContent = "An error occurred.";
-        resultModalInstance.show();
-      });
-    });
-  });
-
-  // Reject form submit handler (show result modal and refresh after close)
-  var rejectForm = document.getElementById('rejectForm');
-  rejectForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    var formData = new FormData(rejectForm);
-    fetch(rejectForm.action, {
-      method: "POST",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest"
-      },
-      body: new URLSearchParams(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-      document.getElementById('resultModalTitle').textContent = data.success ? "Success" : "Error";
-      document.getElementById('resultModalMessage').textContent = data.message || (data.success ? "Request rejected." : "An error occurred.");
-      bootstrap.Modal.getOrCreateInstance(resultModalEl).show();
-      bootstrap.Modal.getOrCreateInstance(rejectModal).hide();
-    })
-    .catch(() => {
-      document.getElementById('resultModalTitle').textContent = "Error";
-      document.getElementById('resultModalMessage').textContent = "An error occurred.";
-      bootstrap.Modal.getOrCreateInstance(resultModalEl).show();
-      bootstrap.Modal.getOrCreateInstance(rejectModal).hide();
-    });
-  });
-});
-
-/* document.addEventListener('DOMContentLoaded', function () {
-    const adminTab = document.getElementById('admin-tab');
-
-    // Save the active tab in the URL when a tab is clicked
-    adminTab.querySelectorAll('.nav-link').forEach(tab => {
-        tab.addEventListener('click', function (event) {
-            const targetTab = this.getAttribute('href');
-            const url = new URL(window.location);
-            url.searchParams.set('tab', targetTab.replace('#', ''));
-            window.history.pushState({}, '', url);
-        });
-    });
-}); */
+  const batchEditUrl = "{{ url_for('main.batch_edit') }}"; // Backend endpoint for batch editing
+  const approveUrl = "{{ url_for('main.approve_submission') }}"; // Backend endpoint for approving submissions
+  const rejectUrl = "{{ url_for('main.reject_submission') }}"; // Backend endpoint for rejecting submissions
+  
 </script>
+<script src="{{ url_for('static', filename='js/admin_panel.js') }}"></script>
 {% endblock %}
+

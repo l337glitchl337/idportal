@@ -1,0 +1,19 @@
+.nav-pills .nav-link.active {
+  background-color: #007bff;
+}
+
+.table-actions button {
+  margin-right: 0.5rem;
+}
+
+.modal-body textarea {
+  resize: none;
+}
+
+.bulk-actions {
+  margin-bottom: 1rem;
+}
+
+.photo-btn {
+  color: #0dcaf0;
+}

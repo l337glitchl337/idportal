@@ -193,9 +193,14 @@
             <td>{{ admin.username }}</td>
             <td>{{ admin.role }}</td>
             <td>
-              <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#adminModal"
-                data-admin='{{ admin|tojson }}'>Edit</button>
-              <button class="btn btn-sm btn-danger">Delete</button>
+              {%if admin.user_id == current_user.user_id %}
+              <button class="btn btn-sm btn-secondary" disabled>Cannot Edit Self</button>
+              {% else %} 
+              <button class="editAdminBtn btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editAdminModal"
+                data-admin='{{ admin|tojson }}' id="editAdminBtn">Edit</button>
+                <button type="button" class="deleteAdminBtn btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAdminModal" data-admin='{{ admin|tojson }}'>Delete</button>
+                </form>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -247,6 +252,8 @@
 {{ macros.modal('commentsModal', 'Rejection Comments', 'commentsModalBody', '<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>') }}
 {{ macros.modal('adminModal', 'Create Admin', 'adminModalBody', '<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="saveAdminBtn">Save</button>') }}
 {{ macros.modal('createAdminModal', 'Create Admin Account', 'createAdminModalBody') }}
+{{ macros.modal('editAdminModal', 'Edit Admin Account', 'editAdminModalBody') }}
+{{ macros.modal('deleteAdminModal', 'Delete Admin Account', 'deleteAdminModalBody') }}
 
 {% endblock %}
 

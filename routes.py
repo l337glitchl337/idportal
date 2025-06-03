@@ -93,7 +93,7 @@ def admin_panel():
     page = request.args.get("page", 1, type=int)
 
     active_tab = request.args.get("active_tab", "pending") 
-    current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"]}
+    current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"], "user_id": session["user_id"]}
     data = populate_admin_panel(page)
     return render_template("admin_panel.html", **data, active_tab=active_tab, current_user=current_user, current_page=page)
 
@@ -235,3 +235,44 @@ def batch_edit():
     else:
         flash("Invalid action selected", "danger")
         return redirect(url_for("main.admin_panel"))
+
+@blueprint.route("/edit_admin_account", methods=["POST"])
+@check_admin_login
+@check_first_login
+def edit_admin_account():
+    if session["role"] != "super":
+        flash("You do not have permission to edit admin accounts", "danger")
+        return redirect(url_for("main.admin_panel", active_tab="admins"))
+    user_id = request.form.get("user_id")
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
+    username = request.form.get("username")
+    email = request.form.get("email")
+    role = request.form.get("role")
+
+    if user_id == session["user_id"]:
+        flash("You cannot edit your own account from here. Please use the profile page.", "danger")
+        return redirect(url_for("main.admin_panel", active_tab="profile"))
+
+    if edit_admin(user_id, first_name, last_name, username, email, role):
+        flash("Admin account updated successfully!", "success")
+        return redirect(url_for("main.admin_panel", active_tab="admins"))
+    else:
+        flash("Failed to update admin account. Please check logs for more details", "danger")
+        return redirect(url_for("main.admin_panel", active_tab="admins"))
+    
+@blueprint.route("/delete_admin_account", methods=["POST"])
+@check_admin_login
+@check_first_login
+def delete_admin_account():
+    if session["role"] != "super":
+        return {"success": False, "message": "You do not have permission to delete admin accounts"}
+    
+    user_id = request.form.get("user_id")
+    if user_id == session["user_id"]:
+        return {"success": False, "message": "You cannot delete your own account"}
+
+    if delete_admin(user_id):
+        return {"success": True, "message": "Admin account deleted successfully!"}
+    else:
+        return {"success": False, "message": "Failed to delete admin account. Please check logs for more details"}

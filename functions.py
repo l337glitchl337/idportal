@@ -199,7 +199,7 @@ def admin_login(email, password) -> bool:
     try:
         conn = psycopg2.connect(**params)
         cursor = conn.cursor()
-        cursor.execute("select first_name, last_name, username, email, password, status, role, on_login from admins where username=%s", (email,))
+        cursor.execute("select first_name, last_name, username, email, password, status, role, on_login, id from admins where username=%s", (email,))
         row = cursor.fetchone()
 
         if not row:
@@ -214,6 +214,7 @@ def admin_login(email, password) -> bool:
         session["email"] = row[3]
         session["role"] = row[6]
         session["on_login"] = row[7]
+        session["user_id"] = row[8]
     except:
         print(traceback.format_exc())
         if cursor:
@@ -277,6 +278,7 @@ def populate_admin_panel(page=1, per_page=15) -> dict:
                 d["email"] = row[1]
                 d["username"] = row[2]
                 d["role"] = row[3]
+                d["user_id"] = row[4]
                 admins.append(d)
 
         cursor.execute("select count(*) from submissions where status='N'")
@@ -588,6 +590,43 @@ def del_forgot_password_token(token) -> bool:
         conn = psycopg2.connect(**params)
         cursor = conn.cursor()
         cursor.execute("delete from admin_forgot_password where token=%s", (token,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except:
+        print(traceback.format_exc())
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            return False
+    return True
+
+def delete_admin(user_id) -> bool:
+    params = get_db_params()
+    try:
+        conn = psycopg2.connect(**params)
+        cursor = conn.cursor()
+        cursor.execute("delete from admins where id=%s", (user_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except:
+        print(traceback.format_exc())
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            return False
+    return True
+
+def edit_admin(user_id, first_name, last_name, username, email, role) -> bool:
+    params = get_db_params()
+    try:
+        conn = psycopg2.connect(**params)
+        cursor = conn.cursor()
+        cursor.execute("update admins set first_name=%s, last_name=%s, username=%s, email=%s, role=%s where id=%s",
+                       (first_name, last_name, username, email, role, user_id))
         conn.commit()
         cursor.close()
         conn.close()

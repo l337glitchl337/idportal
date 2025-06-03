@@ -1,3 +1,31 @@
+function showResultModal(success, message, errors = {}) {
+  const modalTitle = document.getElementById('resultModalTitle');
+  const modalBody = document.getElementById('resultModalBody');
+  const modalErrors = document.getElementById('resultModalErrors');
+
+  if (!modalTitle || !modalBody || !modalErrors) {
+    console.error("Modal elements not found in the DOM.");
+    return;
+  }
+
+  // Update modal title and message
+  modalTitle.textContent = success ? "Success" : "Error";
+  modalBody.innerHTML = message;
+
+  // Update modal errors if any
+  if (Object.keys(errors).length > 0) {
+    const errorList = Object.entries(errors)
+      .map(([id, error]) => `<li>Request ID ${id}: ${error}</li>`)
+      .join('');
+    modalErrors.innerHTML = `<ul>${errorList}</ul>`;
+  } else {
+    modalErrors.innerHTML = ''; // Clear errors if none
+  }
+
+  // Show the modal
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('resultModal')).show();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
   function setBulkRequestIds(ids) {
@@ -10,34 +38,6 @@ document.addEventListener('DOMContentLoaded', function () {
       input.value = id;
       container.appendChild(input);
     });
-  }
-
-  function showResultModal(success, message, errors = {}) {
-    const modalTitle = document.getElementById('resultModalTitle');
-    const modalBody = document.getElementById('resultModalBody');
-    const modalErrors = document.getElementById('resultModalErrors');
-
-    if (!modalTitle || !modalBody || !modalErrors) {
-      console.error("Modal elements not found in the DOM.");
-      return;
-    }
-
-    // Update modal title and message
-    modalTitle.textContent = success ? "Success" : "Error";
-    modalBody.innerHTML = message;
-
-    // Update modal errors if any
-    if (Object.keys(errors).length > 0) {
-      const errorList = Object.entries(errors)
-        .map(([id, error]) => `<li>Request ID ${id}: ${error}</li>`)
-        .join('');
-      modalErrors.innerHTML = `<ul>${errorList}</ul>`;
-    } else {
-      modalErrors.innerHTML = ''; // Clear errors if none
-    }
-
-    // Show the modal
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('resultModal')).show();
   }
 
   // Approve Selected
@@ -379,5 +379,114 @@ document.addEventListener('DOMContentLoaded', function () {
     // Show the modal
     const modalInstance = bootstrap.Modal.getOrCreateInstance(createAdminModal);
     modalInstance.show();
+  });
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  const editAdminModal = document.getElementById('editAdminModal');
+  const editAdminModalBody = document.getElementById('editAdminModalBody');
+
+  // Attach event listener to all edit buttons
+  document.querySelectorAll('.editAdminBtn[data-admin]').forEach(button => {
+    button.addEventListener('click', function () {
+      let adminData = this.getAttribute('data-admin'); // Get admin data from the button's data attribute
+      let admin = JSON.parse(adminData); // Parse the JSON data
+      let nameParts = (admin.full_name || '').split(' ').filter(Boolean);
+      let firstName = nameParts[0] || '';
+      let lastName = nameParts.slice(1).join(' ') || '';
+
+      // Populate the modal body with a form
+      editAdminModalBody.innerHTML = `
+        <form id="createAdminForm" method="POST" action="/edit_admin_account">
+          <input type="hidden" name="user_id" value="${admin.user_id}">
+          <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="firstName" name="first_name" value="${firstName}" required>
+          </div>
+          <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="lastName" name="last_name" value="${lastName}" required>
+          </div>
+          <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" class="form-control" id="username" name="username" value="${admin.username}" required>
+          </div>
+          <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" value="${admin.email}" required>
+          </div>
+          <div class="mb-3">
+        <label for="role" class="form-label">Role</label>
+        <select class="form-select" id="role" name="role" required>
+          <option value="manager" ${admin.role === 'manager' ? 'selected' : ''}>Manager</option>
+          <option value="super" ${admin.role === 'super' ? 'selected' : ''}>Super</option>
+        </select>
+          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+        </form>
+      `;
+
+      // Show the modal
+      const modalInstance = bootstrap.Modal.getOrCreateInstance(editAdminModal);
+      modalInstance.show();
+    });
+  });
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  const deleteAdminModal = document.getElementById('deleteAdminModal');
+  const deleteAdminModalBody = document.getElementById('deleteAdminModalBody');
+
+  // Attach event listener to all delete buttons
+  document.querySelectorAll('.deleteAdminBtn[data-admin]').forEach(button => {
+    button.addEventListener('click', function () {
+      let adminData = this.getAttribute('data-admin');
+      let admin = JSON.parse(adminData);
+
+      // Populate the modal body with confirmation message and confirm button
+      deleteAdminModalBody.innerHTML = `
+        <p>Are you sure you want to delete admin <strong>${admin.full_name || admin.username}</strong>?</p>
+        <input type="hidden" id="deleteAdminUserId" value="${admin.user_id}">
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">No</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteAdminBtn">Yes, Delete</button>
+        </div>
+      `;
+
+      // Show the modal
+      const modalInstance = bootstrap.Modal.getOrCreateInstance(deleteAdminModal);
+      modalInstance.show();
+
+      // Set up confirm button handler (must re-select since it's re-rendered)
+      const confirmDeleteBtn = document.getElementById('confirmDeleteAdminBtn');
+      confirmDeleteBtn.onclick = function () {
+        const userId = document.getElementById('deleteAdminUserId').value;
+
+        fetch('/delete_admin_account', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ user_id: userId })
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Show result modal based on response, using the returned message
+          if (typeof showResultModal === 'function') {
+            showResultModal(data.success, data.message || (data.success ? 'Admin deleted successfully.' : 'Failed to delete admin.'));
+          }
+          modalInstance.hide();
+        })
+        .catch(() => {
+          if (typeof showResultModal === 'function') {
+            showResultModal(false, 'An error occurred while deleting the admin.');
+          }
+          modalInstance.hide();
+        });
+      };
+    });
   });
 });

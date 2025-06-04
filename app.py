@@ -1,6 +1,7 @@
 from flask import Flask
 from dotenv import load_dotenv
 from extensions import mail
+from services import Database, AdminService, EmailService, LDAPService, SubmissionService, AuthService
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -28,7 +29,8 @@ def create_app():
             "FORGOT_PASSWORD_URL" : app.config["FORGOT_PASSWORD_URL"],
             "REVIEW_REQUEST_URL" : app.config["REVIEW_REQUEST_URL"]
         }
-    
+    app.db = Database(app)
+    app.admin_service = AdminService(app.db)
     return app
 
 app = create_app()

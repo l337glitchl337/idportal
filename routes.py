@@ -75,8 +75,9 @@ def admin():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-
-        if admin_login(username, password):
+        admin_service = current_app.admin_service
+        
+        if admin_service.admin_login(username, password):
             if session["on_login"]:
                 flash("Please change your password before proceeding", "danger")
                 return redirect(url_for("main.change_admin_password"))
@@ -90,17 +91,19 @@ def admin():
 @check_admin_login
 @check_first_login
 def admin_panel():
+    admin_service = current_app.admin_service
     page = request.args.get("page", 1, type=int)
 
     active_tab = request.args.get("active_tab", "pending") 
     current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"], "user_id": session["user_id"]}
-    data = populate_admin_panel(page)
+    data = admin_service.populate_admin_panel(page)
     return render_template("admin_panel.html", **data, active_tab=active_tab, current_user=current_user, current_page=page)
 
 @blueprint.route("/create_admin_account", methods = ["POST"])
 @check_admin_login
 @check_first_login
 def create_admin_account():
+    admin_service = current_app.admin_service
     first_name = request.form.get("first_name")
     last_name = request.form.get("last_name")
     username = request.form.get("username")
@@ -108,7 +111,7 @@ def create_admin_account():
     email = request.form.get("email")
     role = request.form.get("role")
 
-    if create_admin(first_name, last_name, username, password, email, role):
+    if admin_service.create_admin(first_name, last_name, username, password, email, role):
         flash("Admin created succesfully!", "success")
         send_welcome_email(username, password, first_name, email)
     else:
@@ -139,9 +142,11 @@ def logout():
 @check_admin_login
 @check_first_login
 def reject_submission():
+    admin_service = current_app.admin_service
     request_id = request.form.get("request_id")
     comments = request.form.get("comments")
-    if reject_request(request_id, comments):
+    
+    if admin_service.reject_request(request_id, comments):
         return {"success": True, "message": "Submission rejected successfully!"}
     else:
         return {"success": False, "message": "Failed to reject submission. Please check logs for more details"}
@@ -150,8 +155,9 @@ def reject_submission():
 @check_admin_login
 @check_first_login
 def approve_submission():
+    admin_service = current_app.admin_service
     request_id = request.form.get("request_id")
-    if approve_request(request_id):
+    if admin_service.approve_request(request_id):
         return {"success": True, "message": "Submission approved successfully!"}
     else:
         return {"success": False, "message": "Failed to approve submission. Please check logs for more details"}

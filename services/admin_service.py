@@ -4,28 +4,6 @@ from flask import session
 class AdminService:
     def __init__(self, db=None):
         self.db = db
-
-    def admin_login(self, email, password) -> bool:
-        row = self.db.execute_query("""SELECT first_name, last_name, username, email, 
-                                    password, status, role, on_login, 
-                                    id FROM admins WHERE username = %s""", 
-                                    (email,), fetch_one=True)
-        if not row:
-            return False
-        
-        db_password = row[4]
-        if not bcrypt.checkpw(password.encode("utf-8"), db_password.encode("utf-8")):
-            print("Faliled authentication")
-            return False
-        session["first_name"] = row[0]
-        session["last_name"] = row[1]
-        session["admin_username"] = row[2]
-        session["email"] = row[3]
-        session["role"] = row[6]
-        session["on_login"] = row[7]
-        session["user_id"] = row[8]
-
-        return True
     
     def create_admin(self, first_name, last_name, username, password, email, role) -> bool:
         password = password.encode('utf-8')
@@ -160,16 +138,17 @@ class AdminService:
             }
         }
     
-    def approve_request(self, request_id) -> bool:
-        result = self.db.execute_query("update submissions set status=%s where request_id=%s", ('A', request_id))
-        if not result:
-            return False
-        return True
+
+    def edit_admin(self, user_id, first_name, last_name, username, email, role) -> bool:
+            result = self.db.execute_query("""update admins set first_name=%s, 
+                                           last_name=%s, username=%s, email=%s, role=%s where id=%s""",
+                                           (first_name, last_name, username, email, role, user_id))
+            if not result:
+                return False
+            return True
     
-    def reject_request(self, request_id, comments) -> bool:
-        result = self.db.execute_query("update submissions set status=%s, comments=%s where request_id=%s", ('R', comments, request_id))
+    def delete_admin(self, user_id) -> bool:
+        result = self.db.execute_query("delete from admins where id=%s", (user_id,))
         if not result:
             return False
         return True
-            
-       

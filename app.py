@@ -1,6 +1,5 @@
 from flask import Flask
 from dotenv import load_dotenv
-from extensions import mail
 from services import Database, AdminService, EmailService, LDAPService, SubmissionService, AuthService
 
 def create_app():
@@ -9,8 +8,6 @@ def create_app():
     env = app.config.get('ENV', 'production').title()
     app.config.from_object(f'config.{env}Config')
     app.config.from_pyfile('config.py', silent=True)
-
-    mail.init_app(app)
 
     from routes import blueprint
     app.register_blueprint(blueprint=blueprint)
@@ -31,6 +28,10 @@ def create_app():
         }
     app.db = Database(app)
     app.admin_service = AdminService(app.db)
+    app.auth_service = AuthService(app.db)
+    app.ldap_service = LDAPService(app.auth_service, app)
+    app.email_service = EmailService(app.db, app)
+    app.submission_service = SubmissionService(app.db)
     return app
 
 app = create_app()

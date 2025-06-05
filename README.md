@@ -1,45 +1,59 @@
-For the ldap-python dependencies see: https://www.python-ldap.org/en/python-ldap-3.4.3/installing.html#build-prerequisites
+# ID Portal
 
+ID Portal is a web-based tool designed for organizations to accept and manage ID submission requests efficiently and securely.
 
-python-ldap
+## Features
 
-Build prerequisites
-The following software packages are required to be installed on the local system when building python-ldap:
+- Accepts ID submissions from users
+- Admin dashboard for managing and reviewing submissions
+- User authentication and lookup via LDAP
+- Admin authentication and submission storage using PostgreSQL
+## Deployment Notes
 
-Python including its development files
-C compiler corresponding to your Python version (on Linux, it is usually gcc)
-OpenLDAP client libs version 2.4.11 or later; it is not possible and not supported to build with prior versions.
-OpenSSL (optional)
-Cyrus SASL (optional)
-Kerberos libraries, MIT or Heimdal (optional)
+A Docker release is planned for easy deployment in the future.
 
-Alpine
-Packages for building:
+### Prerequisites
 
-apk add build-base openldap-dev python3-dev
+- A running PostgreSQL instance
+- An LDAP environment
+- Python binaries for `psycopg2` and `ldap` modules
 
-CentOS
-Packages for building:
-yum groupinstall "Development tools"
-yum install openldap-devel python-devel
+### Configuration
 
-Debian
-Packages for building and testing:
+Application configuration files are located in the `instance/` directory. Refer to `example.config.py` for an example configuration setup.
+## Tech Stack
 
-apt-get install build-essential python3-dev \
-    libldap2-dev libsasl2-dev slapd ldap-utils tox \
-    lcov valgrind
+- **Backend:** Python, Flask
+- **Database:** PostgreSQL
+- **Authentication:** LDAP (users), PostgreSQL (admins)
+- **Frontend:** HTML, Bootstrap CSS, Vanilla JavaScript, Bootstrap JS
 
-Note:
-On older releases tox was called python-tox.
+## Getting Started
 
-Fedora
-Packages for building and testing:s
-dnf group install development-tools
+1. **Clone the repository**
+    ```bash
+    git clone https://github.com/your-org/idportal.git
+    cd idportal
+    ```
 
-dnf install openldap-devel \
-    python3-devel python3-tox \
-    lcov clang-analyzer valgrind
+2. **Install dependencies**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-Note:
-openldap-2.4.45-2 (Fedora 26), openldap-2.4.45-4 (Fedora 27) or newer are required.
+3. **Configure environment variables**
+    - Set up PostgreSQL connection details
+    - Configure LDAP server settings
+
+4. **Run the application**
+    ```bash
+    flask run
+    ```
+
+## License
+
+This project is licensed under the MIT License.
+
+## Contributing
+
+Contributions are welcome! Please open issues or submit pull requests.

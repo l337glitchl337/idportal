@@ -4,51 +4,49 @@
 # python -c "import secrets; print(secrets.token_urlsafe(64))" in your terminal
 # Note: a secret key is required to run the app
 
-""" 
-SECRET_KEY              = "SECRET_KEY"
-UPLOAD_FOLDER           = "UPLOAD_FOLDER"
-MAX_CONTENT_LENGTH      = "MAX_CONTENT_LENGTH"  """
+SECRET_KEY              = "your-secret"
 
 #LDAP CONFIGURATION
+#The search filter key should point to whatever attribute you store the user's email in.
+#OBJ will be substituted with the user's email address upon login for example:
+#(mail=OBJ) or (userMail=OBJ), etc.
 
-""" 
-LDAP_URI                = "LDAP_URI" 
-LDAP_BIND_DN            = "LDAP_BIND_DN" 
-LDAP_BIND_PWD           = "LDAP_BIND_PWD" 
-LDAP_SEARCH_BASE        = "LDAP_SEARCH_BASE" 
-LDAP_SEARCH_FILTER      = "LDAP_SEARCH_FILTER" """ 
+LDAP_URI                = "ldap://your-ldap-server:389" 
+LDAP_BIND_DN            = "cn=admin,dc=example,dc=com" 
+LDAP_BIND_PWD           = "your-ldap-password" 
+LDAP_SEARCH_BASE        = "ou=Users,dc=example,dc=com" 
+LDAP_SEARCH_FILTER      = "(mail=OBJ)"
 
 #Branding, title for the website and logo
 
-""" 
-SITE_TITLE              = "SITE_TITLE" 
-LOGO                    = "LOGO" 
-FORGOT_PASSWORD_URL     = "FORGOT_PASSWORD_URL" 
-REVIEW_REQUEST_URL      = "REVIEW_REQUEST_URL" 
-COMPANY_NAME            = "COMPANY_NAME" 
-COMPANY_ADDRESS         = "COMPANY_ADDRESS" 
-COMPANY_STATE_ZIP       = "COMPANY_STATE_ZIP" 
-COMPANY_PHONE           = "COMPANY_PHONE" 
-COMPANY_CURRENT_YEAR    = "COMPANY_CURRENT_YEAR" 
-COMPANY_EMAIL_SIGNATURE = "COMPANY_EMAIL_SIGNATURE"  """
+SITE_TITLE              = "Demo IDPortal" 
+LOGO                    = "portal_logo.png" 
+FORGOT_PASSWORD_URL     = "http://localhost:5000/forgot_password" 
+REVIEW_REQUEST_URL      = "http://localhost:5000/admin_panel" 
+COMPANY_NAME            = "Demo Company" 
+COMPANY_ADDRESS         = "123 Wallaby Way" 
+COMPANY_STATE_ZIP       = "New York, NY 10001" 
+COMPANY_PHONE           = "(123) 456-7890" 
+COMPANY_CURRENT_YEAR    = "2025" 
+COMPANY_EMAIL_SIGNATURE = "Demo Company ID Portal Team" 
 
 
 #Email config
+#If you are wanting to use a local relay smtp server without authentication comment out
+# the MAIL_USERNAME and MAIL_PASSWORD lines below
 
-""" 
-MAIL_SERVER             = "MAIL_SERVER" 
-MAIL_PORT               = "MAIL_PORT" 
-#MAIL_USE_TLS            = "MAIL_USE_TLS" 
-#MAIL_USERNAME           = "MAIL_USERNAME" 
-#MAIL_PASSWORD           = "MAIL_PASSWORD" 
-MAIL_DEFAULT_SENDER     = "MAIL_DEFAULT_SENDER" , "MAIL_USERNAME"  
-MAIL_DEFAULT_RECIP      = "MAIL_DEFAULT_RECIP"  """
+MAIL_SERVER             = "mx.example.com" 
+MAIL_PORT               = "25" 
+MAIL_USE_TLS            = "False" 
+MAIL_USERNAME           = "admin@example.com" 
+MAIL_PASSWORD           = "your-email-password" 
+MAIL_DEFAULT_SENDER     = ("IDPortal Admin" , "demoIT@example.com")
+MAIL_DEFAULT_RECIP      = "demoIT@example.com" 
 
 #Postgres config
 
-""" 
-PG_DBNAME               = "PG_DBNAME" 
-PG_USER                 = "PG_USER" 
-PG_PWD                  = "PG_PWD" 
-PG_HOST                 = "PG_HOST" 
-PG_PORT                 = "PG_PORT"  """
+PG_DBNAME               = "idportal" 
+PG_USER                 = "your_db_user" 
+PG_PWD                  = "your_db_password" 
+PG_HOST                 = "127.0.0.1" 
+PG_PORT                 = "5432" 

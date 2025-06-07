@@ -1,4 +1,7 @@
-#BASE FLASK CONFIG
+# This is an example config file for IDPortal.
+# It is recommended to copy this file to instance/config.py and edit the values there.
+
+# BASE FLASK CONFIG
 
 # To generate a secret key run: 
 # python -c "import secrets; print(secrets.token_urlsafe(64))" in your terminal
@@ -6,10 +9,10 @@
 
 SECRET_KEY              = "your-secret"
 
-#LDAP CONFIGURATION
-#The search filter key should point to whatever attribute you store the user's email in.
-#OBJ will be substituted with the user's email address upon login for example:
-#(mail=OBJ) or (userMail=OBJ), etc.
+# LDAP CONFIGURATION
+# The search filter key should point to whatever attribute you store the user's email in.
+# OBJ will be substituted with the user's email address upon login for example:
+# (mail=OBJ) or (userMail=OBJ), etc.
 
 LDAP_URI                = "ldap://your-ldap-server:389" 
 LDAP_BIND_DN            = "cn=admin,dc=example,dc=com" 
@@ -17,7 +20,7 @@ LDAP_BIND_PWD           = "your-ldap-password"
 LDAP_SEARCH_BASE        = "ou=Users,dc=example,dc=com" 
 LDAP_SEARCH_FILTER      = "(mail=OBJ)"
 
-#Branding, title for the website and logo
+# Branding, title for the website and logo
 
 SITE_TITLE              = "Demo IDPortal" 
 LOGO                    = "portal_logo.png" 
@@ -31,8 +34,8 @@ COMPANY_CURRENT_YEAR    = "2025"
 COMPANY_EMAIL_SIGNATURE = "Demo Company ID Portal Team" 
 
 
-#Email config
-#If you are wanting to use a local relay smtp server without authentication comment out
+# Email config
+# If you are wanting to use a local relay smtp server without authentication comment out
 # the MAIL_USERNAME and MAIL_PASSWORD lines below
 
 MAIL_SERVER             = "mx.example.com" 
@@ -43,7 +46,7 @@ MAIL_PASSWORD           = "your-email-password"
 MAIL_DEFAULT_SENDER     = ("IDPortal Admin" , "demoIT@example.com")
 MAIL_DEFAULT_RECIP      = "demoIT@example.com" 
 
-#Postgres config
+# Postgres config
 
 PG_DBNAME               = "idportal" 
 PG_USER                 = "your_db_user" 

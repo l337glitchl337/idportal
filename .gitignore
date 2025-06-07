@@ -6,5 +6,6 @@ static/uploads/**
 venv/
 __pycache__/
 instance/config.py
+logs/** */
 !logs/
 !logs/.gitignore

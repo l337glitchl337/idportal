@@ -15,7 +15,7 @@ A Docker release is planned for easy deployment in the future.
 ## Project Structure
 
 ```
-dportal/
+idportal/
 ├── app.py
 ├── helpers
 │   ├── decorator_helper.py

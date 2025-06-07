@@ -1,0 +1,50 @@
+#BASE FLASK CONFIG
+
+""" 
+SECRET_KEY              = "SECRET_KEY"
+UPLOAD_FOLDER           = "UPLOAD_FOLDER"
+MAX_CONTENT_LENGTH      = "MAX_CONTENT_LENGTH"  """
+
+#LDAP CONFIGURATION
+
+""" 
+LDAP_URI                = "LDAP_URI" 
+LDAP_BIND_DN            = "LDAP_BIND_DN" 
+LDAP_BIND_PWD           = "LDAP_BIND_PWD" 
+LDAP_SEARCH_BASE        = "LDAP_SEARCH_BASE" 
+LDAP_SEARCH_FILTER      = "LDAP_SEARCH_FILTER" """ 
+
+#Branding, title for the website and logo
+
+""" 
+SITE_TITLE              = "SITE_TITLE" 
+LOGO                    = "LOGO" 
+FORGOT_PASSWORD_URL     = "FORGOT_PASSWORD_URL" 
+REVIEW_REQUEST_URL      = "REVIEW_REQUEST_URL" 
+COMPANY_NAME            = "COMPANY_NAME" 
+COMPANY_ADDRESS         = "COMPANY_ADDRESS" 
+COMPANY_STATE_ZIP       = "COMPANY_STATE_ZIP" 
+COMPANY_PHONE           = "COMPANY_PHONE" 
+COMPANY_CURRENT_YEAR    = "COMPANY_CURRENT_YEAR" 
+COMPANY_EMAIL_SIGNATURE = "COMPANY_EMAIL_SIGNATURE"  """
+
+
+#Email config
+
+""" 
+MAIL_SERVER             = "MAIL_SERVER" 
+MAIL_PORT               = "MAIL_PORT" 
+#MAIL_USE_TLS            = "MAIL_USE_TLS" 
+#MAIL_USERNAME           = "MAIL_USERNAME" 
+#MAIL_PASSWORD           = "MAIL_PASSWORD" 
+MAIL_DEFAULT_SENDER     = "MAIL_DEFAULT_SENDER" , "MAIL_USERNAME"  
+MAIL_DEFAULT_RECIP      = "MAIL_DEFAULT_RECIP"  """
+
+#Postgres config
+
+""" 
+PG_DBNAME               = "PG_DBNAME" 
+PG_USER                 = "PG_USER" 
+PG_PWD                  = "PG_PWD" 
+PG_HOST                 = "PG_HOST" 
+PG_PORT                 = "PG_PORT"  """

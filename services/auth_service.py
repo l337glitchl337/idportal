@@ -1,31 +1,35 @@
 import bcrypt
 from flask import session, flash, current_app
 from uuid import uuid4
+from factories import get_logger
 
 class AuthService:
     def __init__(self, db=None):
         self.db = db
+        self.logger = get_logger("auth_service")
     
-    def admin_login(self, email, password) -> bool:
-        row = self.db.execute_query("""SELECT first_name, last_name, username, email, 
+    def admin_login(self, username, password) -> bool:
+        self.logger.info(f"Attempting to login with username: {username}")
+        row = self.db.execute_query("""SELECT first_name, last_name, username, username, 
                                     password, status, role, on_login, 
                                     id FROM admins WHERE username = %s""", 
-                                    (email,), fetch_one=True)
+                                    (username,), fetch_one=True)
         if not row:
+            self.logger.warning(f"Login failed for username: {username} - User not found")
             return False
         
         db_password = row[4]
         if not bcrypt.checkpw(password.encode("utf-8"), db_password.encode("utf-8")):
-            print("Faliled authentication")
+            self.logger.warning(f"Login failed for username: {username} - Incorrect password")
             return False
         session["first_name"] = row[0]
         session["last_name"] = row[1]
         session["admin_username"] = row[2]
-        session["email"] = row[3]
+        session["username"] = row[3]
         session["role"] = row[6]
         session["on_login"] = row[7]
         session["user_id"] = row[8]
-
+        self.logger.info(f"Login successful for username: {username}")
         return True
     
     def update_admin_password(self, username, new_password) -> bool:
@@ -83,35 +87,35 @@ class AuthService:
         except:
             return False
         
-    def check_bfa(self, email, ip_address, failed) -> bool:
-        row = self.db.execute_query("select * from bfa where email=%s", (email,), fetch_one=True)
+    def check_bfa(self, username, ip_address, failed) -> bool:
+        row = self.db.execute_query("select * from bfa where username=%s", (username,), fetch_one=True)
         if row:
             if int(row[3]) < 3 and failed:
                 self.db.execute_query("""
                             update bfa set failed_attempts=failed_attempts+1,
                             timestamp_inserted=now()
-                            where email=%s""",
-                            (email,)
+                            where username=%s""",
+                            (username,)
                             )
             elif int(row[3]) >= 3 and not failed:
                 row = self.db.execute_query("""select (now() - timestamp_inserted) >
                                 interval '30 minutes' as is_older
                                 from bfa
-                                where email=%s""", (email,), fetch_one=True)
+                                where username=%s""", (username,), fetch_one=True)
                 if not bool(row[0]):
-                    row = self.db.execute_query("""select timestamp_inserted + interval '30 minutes' from bfa where email=%s""", 
-                                                (email,), fetch_one=True)
-                    print(f"""IP: {ip_address} has failed to login into '{email}' 3 times, \
+                    row = self.db.execute_query("""select timestamp_inserted + interval '30 minutes' from bfa where username=%s""", 
+                                                (username,), fetch_one=True)
+                    print(f"""IP: {ip_address} has failed to login into '{username}' 3 times, \
 account is locked out until {row[0]} authentication will not be tried until lockout has expired.""")
                     return False
                 else:
-                    self.db.execute_query("delete from bfa where email=%s", (email,))
+                    self.db.execute_query("delete from bfa where username=%s", (username,))
                     return True
         elif not row and failed:
             row = self.db.execute_query(f"""
-                        insert into bfa (email, ip_address)
-                        values ('{email}', '{ip_address}'::inet)""",
-                        (email, ip_address))
+                        insert into bfa (username, ip_address)
+                        values ('{username}', '{ip_address}'::inet)""",
+                        (username, ip_address))
         if not row:
             return False
         return True

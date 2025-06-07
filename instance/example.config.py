@@ -43,8 +43,8 @@ MAIL_PORT               = "25"
 MAIL_USE_TLS            = "False" 
 MAIL_USERNAME           = "admin@example.com" 
 MAIL_PASSWORD           = "your-email-password" 
-MAIL_DEFAULT_SENDER     = ("IDPortal Admin" , "demoIT@example.com")
-MAIL_DEFAULT_RECIP      = "demoIT@example.com" 
+MAIL_DEFAULT_SENDER     = ("IDPortal Admin" , "no-reply-idportal@example.com")
+MAIL_DEFAULT_RECIP      = "idportal-admins@example.com" 
 
 # Postgres config
 

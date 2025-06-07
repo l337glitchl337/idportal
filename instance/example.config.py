@@ -1,5 +1,9 @@
 #BASE FLASK CONFIG
 
+# To generate a secret key run: 
+# python -c "import secrets; print(secrets.token_urlsafe(64))" in your terminal
+# Note: a secret key is required to run the app
+
 """ 
 SECRET_KEY              = "SECRET_KEY"
 UPLOAD_FOLDER           = "UPLOAD_FOLDER"

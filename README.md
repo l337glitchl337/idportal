@@ -12,6 +12,53 @@ ID Portal is a web-based tool designed for organizations to accept and manage ID
 
 A Docker release is planned for easy deployment in the future.
 
+## Project Structure
+
+```
+dportal/
+├── app.py
+├── helpers
+│   ├── decorator_helper.py
+│   ├── __init__.py
+│   └── utility_helper.py
+├── instance
+├── README.md
+├── requirements.txt
+├── routes.py
+├── services
+│   ├── admin_service.py
+│   ├── auth_service.py
+│   ├── db_utils.py
+│   ├── email_service.py
+│   ├── __init__.py
+│   ├── ldap_service.py
+│   └── submission_service.py
+├── static
+│   ├── css
+│   │   └── admin_panel.css
+│   ├── favicon.ico
+│   ├── js
+│   │   └── admin_panel.js
+│   ├── style.css
+│   └── uploads
+└── templates
+    ├── admin_forgot_password.html
+    ├── admin.html
+    ├── admin_panel.html
+    ├── base.html
+    ├── change_admin_password.html
+    ├── email
+    │   ├── admin_email.html
+    │   ├── admin_welcome.html
+    │   ├── forgot_password.html
+    │   └── student_email.html
+    ├── includes
+    │   └── macros.html
+    ├── landing.html
+    ├── login.html
+    └── upload_photo.html
+```
+
 ### Prerequisites
 
 - A running PostgreSQL instance

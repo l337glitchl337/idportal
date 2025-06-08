@@ -34,6 +34,6 @@ class DecoratorHelper:
         def decorated(*args, **kwargs):
             if session["on_login"] == 1:
                 flash("Please change your password first!", "danger")
-                return redirect(url_for("main.first_login"))
+                return redirect(url_for("main.admin"))
             return f(*args, **kwargs)
         return decorated

@@ -35,38 +35,38 @@ class AuthService:
         self.logger.info(f"[{request.remote_addr}] login successful for user: {username}")
         return True
     
-    def update_admin_password(self, email, new_password) -> bool:
-        self.logger.info(f"{email} attempting to change password.")
+    def update_admin_password(self, username, new_password) -> bool:
+        self.logger.info(f"{username} attempting to change password.")
         new_password = new_password.encode('utf-8')
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(new_password, salt).decode("utf-8")
-        row = self.db.execute_query("select password from admins where email=%s", (email,), fetch_one=True)
+        row = self.db.execute_query("select password from admins where username=%s", (username,), fetch_one=True)
         if not row:
-            self.logger.error(f"{email} not found in admins table.")
+            self.logger.error(f"{username} not found in admins table.")
             return False
         if bcrypt.checkpw(new_password, row[0].encode("utf-8")):
-            self.logger.info(f"{email} attempted to change password that is already set.")
+            self.logger.info(f"{username} attempted to change password that is already set.")
             flash("New password cannot be the same as the old password", "danger")
             return False
-        result = self.db.execute_query("update admins set password=%s, on_login=0 where email=%s", (hashed_password, email))
+        result = self.db.execute_query("update admins set password=%s, on_login=0 where username=%s", (hashed_password, username))
         if not result:
             flash("Failed to update password", "danger")
-            self.logger.info(f"{email} failed to change password.")
+            self.logger.info(f"{username} failed to change password.")
             return False
-        self.logger.info(f"{email} succesfully changed password")
+        self.logger.info(f"{username} succesfully changed password")
         flash("Password updated successfully", "success")
         return True
     
-    def compare_password(self, email, current_password) -> bool:
-        row = self.db.execute_query("select password from admins where email=%s", (email,), fetch_one=True)
+    def compare_password(self, username, current_password) -> bool:
+        row = self.db.execute_query("select password from admins where username=%s", (username,), fetch_one=True)
         if not row:
-            self.logger.warning(f"{email} not found in admins, unable to compare passwords.")
+            self.logger.warning(f"{username} not found in admins, unable to compare passwords.")
             return False
         db_password = row[0]
         if not bcrypt.checkpw(current_password.encode("utf-8"), db_password.encode("utf-8")):
-            self.logger.warning(f"{email} - password doesn't match db password.")
+            self.logger.warning(f"{username} - password doesn't match db password.")
             return False
-        self.logger.info(f"{email} succesfully compared password.")
+        self.logger.info(f"{username} succesfully compared password.")
         return True
 
     def gen_random_forgot_password_link(self) -> str:

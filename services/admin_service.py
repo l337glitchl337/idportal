@@ -22,99 +22,120 @@ class AdminService:
             return True
         self.logger.warning(f"Could not create admin account {username}!")
     
-    def populate_admin_panel(self, page=1, per_page=15) -> dict:
+    def populate_admin_panel(self, page=1, per_page=15, active_tab=None) -> dict:
         admins = []
         pending_requests = []
         approved_requests = []
         rejected_requests = []
         offset = (page - 1) * per_page
+        total_admins = 0
+        admin_pages = 0
+        admin_prev_page = 0
+        admin_next_page = 0
+        total_pending = 0
+        pending_pages = 0
+        pending_previous_page = 0
+        pending_next_page = 0
+        total_rejected = 0
+        rejected_pages = 0
+        rejected_previous_page = 0
+        rejected_next_page = 0
+        total_approved = 0
+        approved_pages = 0
+        approved_previous_page = 0
+        approved_next_page = 0
 
-        row = self.db.execute_query("select count(*) from admins", fetch_one=True)
-        total_admins = row[0]
-        admin_pages = (total_admins + per_page - 1) // per_page
-        admin_prev_page = page - 1 if page > 1 else None
-        admin_next_page = page + 1 if page < admin_pages else None
 
-        if session["role"] == "super":
-            rows = self.db.execute_query("select first_name || ' ' || last_name as full_name, email, username, role, id from admins order by id limit %s offset %s", 
-                                  (per_page, offset), 
-                                  fetch_all=True)
-            for row in rows:
-                d = {} 
-                d["full_name"] = row[0]
-                d["email"] = row[1]
-                d["username"] = row[2]
-                d["role"] = row[3]
-                d["user_id"] = row[4]
-                admins.append(d)
+        match active_tab:
+            case "admins":
+                row = self.db.execute_query("select count(*) from admins", fetch_one=True)
+                total_admins = row[0]
+                admin_pages = (total_admins + per_page - 1) // per_page
+                admin_prev_page = page - 1 if page > 1 else None
+                admin_next_page = page + 1 if page < admin_pages else None
+                
+                if session["role"] == "super":
+                    rows = self.db.execute_query("select first_name || ' ' || last_name as full_name, email, username, role, id from admins order by id limit %s offset %s", 
+                                        (per_page, offset), 
+                                        fetch_all=True)
+                    for row in rows:
+                        d = {} 
+                        d["full_name"] = row[0]
+                        d["email"] = row[1]
+                        d["username"] = row[2]
+                        d["role"] = row[3]
+                        d["user_id"] = row[4]
+                        admins.append(d)
+                        
+            case "pending":
+                row = self.db.execute_query("select count(*) from submissions where status='N'", fetch_one=True)
+                total_pending = row[0]
+                pending_pages = (total_pending + per_page - 1) // per_page
+                pending_previous_page = page - 1 if page > 1 else None
+                pending_next_page = page + 1 if page < pending_pages else None
+                
+                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
+                            to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
+                            photo_filepath, license_filepath, request_id
+                            from submissions where status='N' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
+                for row in rows:
+                    d = {}
+                    d["full_name"] = row[0]
+                    d["email"] = row[1]
+                    d["student_id"] = row[2] 
+                    d["campus"] = row[3]
+                    d["timestamp_inserted"] = row[4]
+                    d["photo_filepath"] = row[5]
+                    d["license_filepath"] = row[6]
+                    d["request_id"] = row[7]
+                    pending_requests.append(d)
 
-        row = self.db.execute_query("select count(*) from submissions where status='N'", fetch_one=True)
-        total_pending = row[0]
-        pending_pages = (total_pending + per_page - 1) // per_page
-        pending_previous_page = page - 1 if page > 1 else None
-        pending_next_page = page + 1 if page < pending_pages else None
+            case "rejected":
+                row = self.db.execute_query("select count(*) from submissions where status='R'", fetch_one=True)
+                total_rejected = row[0]
+                rejected_pages = (total_rejected + per_page - 1) // per_page
+                rejected_previous_page = page - 1 if page > 1 else None
+                rejected_next_page = page + 1 if page < rejected_pages else None
+
+                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
+                            to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
+                            photo_filepath, license_filepath, comments, request_id
+                            from submissions where status='R' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
+                for row in rows:
+                    d = {}
+                    d["full_name"] = row[0]
+                    d["email"] = row[1]
+                    d["student_id"] = row[2] 
+                    d["campus"] = row[3]
+                    d["timestamp_inserted"] = row[4]
+                    d["photo_filepath"] = row[5]
+                    d["license_filepath"] = row[6]
+                    d["comments"] = row[7]
+                    d["request_id"] = row[8]
+                    rejected_requests.append(d)
         
-        rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
-                    to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
-                    photo_filepath, license_filepath, request_id
-                    from submissions where status='N' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
-        for row in rows:
-            d = {}
-            d["full_name"] = row[0]
-            d["email"] = row[1]
-            d["student_id"] = row[2] 
-            d["campus"] = row[3]
-            d["timestamp_inserted"] = row[4]
-            d["photo_filepath"] = row[5]
-            d["license_filepath"] = row[6]
-            d["request_id"] = row[7]
-            pending_requests.append(d)
+            case "approved":
+                row = self.db.execute_query("select count(*) from submissions where status='A'", fetch_one=True)
+                total_approved = row[0]
+                approved_pages = (total_approved + per_page - 1) // per_page
+                approved_previous_page = page - 1 if page > 1 else None
+                approved_next_page = page + 1 if page < approved_pages else None
 
-        
-        row = self.db.execute_query("select count(*) from submissions where status='R'", fetch_one=True)
-        total_rejected = row[0]
-        rejected_pages = (total_rejected + per_page - 1) // per_page
-        rejected_previous_page = page - 1 if page > 1 else None
-        rejected_next_page = page + 1 if page < rejected_pages else None
-
-        rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
-                    to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
-                    photo_filepath, license_filepath, comments, request_id
-                    from submissions where status='R' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
-        for row in rows:
-            d = {}
-            d["full_name"] = row[0]
-            d["email"] = row[1]
-            d["student_id"] = row[2] 
-            d["campus"] = row[3]
-            d["timestamp_inserted"] = row[4]
-            d["photo_filepath"] = row[5]
-            d["license_filepath"] = row[6]
-            d["comments"] = row[7]
-            d["request_id"] = row[8]
-            rejected_requests.append(d)
-        
-        row = self.db.execute_query("select count(*) from submissions where status='A'", fetch_one=True)
-        total_approved = row[0]
-        approved_pages = (total_approved + per_page - 1) // per_page
-        approved_previous_page = page - 1 if page > 1 else None
-        approved_next_page = page + 1 if page < approved_pages else None
-
-        rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
-                    to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
-                    photo_filepath, license_filepath, request_id
-                    from submissions where status='A' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
-        for row in rows:
-            d = {}
-            d["full_name"] = row[0]
-            d["email"] = row[1]
-            d["student_id"] = row[2] 
-            d["campus"] = row[3]
-            d["timestamp_inserted"] = row[4]
-            d["photo_filepath"] = row[5]
-            d["license_filepath"] = row[6]
-            d["request_id"] = row[7]
-            approved_requests.append(d)  
+                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
+                            to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
+                            photo_filepath, license_filepath, request_id
+                            from submissions where status='A' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
+                for row in rows:
+                    d = {}
+                    d["full_name"] = row[0]
+                    d["email"] = row[1]
+                    d["student_id"] = row[2] 
+                    d["campus"] = row[3]
+                    d["timestamp_inserted"] = row[4]
+                    d["photo_filepath"] = row[5]
+                    d["license_filepath"] = row[6]
+                    d["request_id"] = row[7]
+                    approved_requests.append(d)  
 
         return {
             "admins": admins,

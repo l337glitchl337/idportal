@@ -82,7 +82,7 @@ def admin():
             if session["on_login"]:
                 flash("Please change your password before proceeding", "danger")
                 return redirect(url_for("main.change_admin_password"))
-            return redirect(url_for("main.admin_panel"))
+            return redirect(url_for("main.admin_panel", active_tab="pending"))
         else:
             flash("Invalid username/password combination", "danger")
             return redirect(url_for("main.admin"))
@@ -97,7 +97,7 @@ def admin_panel():
 
     active_tab = request.args.get("active_tab", "pending") 
     current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"], "user_id": session["user_id"]}
-    data = admin_service.populate_admin_panel(page)
+    data = admin_service.populate_admin_panel(page, active_tab=active_tab)
     return render_template("admin_panel.html", **data, active_tab=active_tab, current_user=current_user, current_page=page)
 
 @blueprint.route("/create_admin_account", methods = ["POST"])

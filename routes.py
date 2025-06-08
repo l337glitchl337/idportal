@@ -144,11 +144,11 @@ def logout():
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def reject_submission():
-    admin_service = current_app.admin_service
+    submission_service = current_app.submission_service
     request_id = request.form.get("request_id")
     comments = request.form.get("comments")
     
-    if admin_service.reject_request(request_id, comments):
+    if submission_service.reject_request(request_id, comments):
         return {"success": True, "message": "Submission rejected successfully!"}
     else:
         return {"success": False, "message": "Failed to reject submission. Please check logs for more details"}
@@ -157,9 +157,9 @@ def reject_submission():
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def approve_submission():
-    admin_service = current_app.admin_service
+    submission_service = current_app.submission_service
     request_id = request.form.get("request_id")
-    if admin_service.approve_request(request_id):
+    if submission_service.approve_request(request_id):
         return {"success": True, "message": "Submission approved successfully!"}
     else:
         return {"success": False, "message": "Failed to approve submission. Please check logs for more details"}

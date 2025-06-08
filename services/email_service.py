@@ -1,5 +1,6 @@
 from flask_mail import Mail, Message
 from flask import render_template, session
+from factories import get_logger
 import datetime
 import traceback
 
@@ -9,6 +10,8 @@ class EmailService:
         self.app = app
         self.db = db
         self.mail.init_app(app)
+        self.logger = get_logger("email_service")
+        self.logger.info("EmailService initialized")
 
     def send_email_alert(self) -> bool:
         messages = []
@@ -42,13 +45,11 @@ class EmailService:
             with self.mail.connect() as conn:
                 for msg in messages:
                     conn.send(msg)
-        except:
-            print("*******************")
-            print("Error sending email")
-            print("*******************")
-            print(traceback.format_exc())
+        except Exception:
+            self.logger.exception("An error occurred while trying to send an email alert!")
             return False
-
+        
+        self.logger.info(f"Succesfully sent email alert to: {self.app.config["MAIL_DEFAULT_RECIP"]}, {session["mail"][0].decode()}")
         return True
     
     def send_welcome_email(self, username, password, first_name, email) -> bool:
@@ -62,12 +63,10 @@ class EmailService:
         try:
             with self.mail.connect() as conn:
                 conn.send(msg)
-        except: 
-            print("*******************")
-            print("Error sending email")
-            print("*******************")
-            print(traceback.format_exc())
+        except Exception:
+            self.logger.exception("Error occurred while trying to send the welcome email!")
             return False
+        self.logger.info(f"Succesfully sent welcome email to {email}")
         return True
     
     def send_forgot_password_email(self, **kwargs) -> bool:
@@ -77,7 +76,8 @@ class EmailService:
         else:
             row = self.db.execute_query("select first_name || ' ' || last_name, username, email, id from admins where username=%s", (kwargs["username"],), fetch_one=True)
         if not row:
-            print("No user found with the provided email or username.")
+            self.logger.error("Error occured while trying to send forgot password email")
+            self.logger.error(f"Unable to find record for {kwargs}")
             return False
         
         email = row[2]
@@ -88,7 +88,6 @@ class EmailService:
 
         result = self.db.execute_query("insert into admin_forgot_password (user_id, token) values (%s, %s)", (user_id, token))
         if not result:
-            print("Failed to insert forgot password token into the database.")
             return False
 
         html_body = render_template('email/forgot_password.html',
@@ -101,10 +100,8 @@ class EmailService:
         try:
             with self.mail.connect() as conn:
                 conn.send(msg)
-        except:
-            print("*******************")
-            print("Error sending email")
-            print("*******************")
-            print(traceback.format_exc())
+        except Exception:
+            self.logger.exception("Error occured while trying to send forgot password email!")
             return False
+        self.logger.info(f"Succesfully sent forgot password email to {kwargs}")
         return True

@@ -6,11 +6,12 @@ class DecoratorHelper:
     def check_login(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            if 'username' not in session:
+            if 'email' not in session:
                 flash("Please login first", "danger")
                 return redirect(url_for("main.home"))
             return f(*args, **kwargs)
         return decorated
+    
     @staticmethod
     def check_admin_login(f):
         @wraps(f)

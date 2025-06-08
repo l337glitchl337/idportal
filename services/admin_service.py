@@ -1,9 +1,12 @@
 import bcrypt
 from flask import session
+from factories import get_logger
 
 class AdminService:
     def __init__(self, db=None):
         self.db = db
+        self.logger = get_logger("admin_service")
+        self.logger.info("AdminService initialized.")
     
     def create_admin(self, first_name, last_name, username, password, email, role) -> bool:
         password = password.encode('utf-8')
@@ -15,7 +18,9 @@ class AdminService:
                             values (%s, %s, %s, %s, %s, %s)""", (first_name, last_name, username, 
                                                                 hashed_password, email, role))
         if result:
+            self.logger.info(f"Succesfully created admin account: {username}")
             return True
+        self.logger.warning(f"Could not create admin account {username}!")
     
     def populate_admin_panel(self, page=1, per_page=15) -> dict:
         admins = []
@@ -144,11 +149,15 @@ class AdminService:
                                            last_name=%s, username=%s, email=%s, role=%s where id=%s""",
                                            (first_name, last_name, username, email, role, user_id))
             if not result:
+                self.logger.warning(f"Could not edit admin account {username}")
                 return False
+            self.logger.info(f"Succesfully edited admin account {username}")
             return True
     
     def delete_admin(self, user_id) -> bool:
         result = self.db.execute_query("delete from admins where id=%s", (user_id,))
         if not result:
+            self.logger.warning(f"Could not delete admin account {user_id}")
             return False
+        self.logger.info(f"Succesfully deleted admin account {user_id}")
         return True

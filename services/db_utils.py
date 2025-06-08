@@ -1,5 +1,5 @@
 import psycopg2
-import traceback
+from factories import get_logger
 
 class Database:
     def __init__(self, app=None):
@@ -10,6 +10,8 @@ class Database:
             "host" : app.config["PG_HOST"],
             "port" : app.config["PG_PORT"]
         }
+        self.logger = get_logger("db_utils")
+        self.logger.info("Database initialized.")
     
     def execute_query(self, query, params=(), fetch_one=False, fetch_all=False):
         try:
@@ -23,7 +25,7 @@ class Database:
                     else:
                         conn.commit()
         except Exception as e:
-            print(f"An error occurred: {e}")
-            traceback.print_exc()
+            self.logger.exception("An SQL error has occurred!")
             return None
+        
         return True

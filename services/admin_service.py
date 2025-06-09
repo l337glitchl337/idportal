@@ -23,31 +23,11 @@ class AdminService:
         self.logger.warning(f"Could not create admin account {username}!")
     
     def populate_admin_panel(self, page=1, per_page=15, active_tab=None) -> dict:
-        admins = []
-        pending_requests = []
-        approved_requests = []
-        rejected_requests = []
-        total_admins = 0
-        admin_pages = 0
-        admin_prev_page = 0
-        admin_next_page = 0
-        total_pending = 0
-        pending_pages = 0
-        pending_previous_page = 0
-        pending_next_page = 0
-        total_rejected = 0
-        rejected_pages = 0
-        rejected_previous_page = 0
-        rejected_next_page = 0
-        total_approved = 0
-        approved_pages = 0
-        approved_previous_page = 0
-        approved_next_page = 0
         offset = (page - 1) * per_page
-
 
         match active_tab:
             case "admins":
+                admins = []
                 row = self.db.execute_query("select count(*) from admins", fetch_one=True)
                 total_admins = row[0]
                 admin_pages = (total_admins + per_page - 1) // per_page
@@ -66,8 +46,17 @@ class AdminService:
                         d["role"] = row[3]
                         d["user_id"] = row[4]
                         admins.append(d)
+                return {
+                    "admins" : admins,
+                    "admin_pagination": {
+                        "total_pages" : admin_pages,
+                        "next_page" : admin_next_page,
+                        "prev_page" : admin_prev_page
+                    }
+                }
                         
             case "pending":
+                pending_requests = []
                 row = self.db.execute_query("select count(*) from submissions where status='N'", fetch_one=True)
                 total_pending = row[0]
                 pending_pages = (total_pending + per_page - 1) // per_page
@@ -89,8 +78,17 @@ class AdminService:
                     d["license_filepath"] = row[6]
                     d["request_id"] = row[7]
                     pending_requests.append(d)
+                return {
+                    "pending_requests" : pending_requests,
+                    "pending_pagination": {
+                        "total_pages" : pending_pages,
+                        "next_page" : pending_next_page,
+                        "prev_page" : pending_previous_page
+                    }
+                }
 
             case "rejected":
+                rejected_requests = []
                 row = self.db.execute_query("select count(*) from submissions where status='R'", fetch_one=True)
                 total_rejected = row[0]
                 rejected_pages = (total_rejected + per_page - 1) // per_page
@@ -113,8 +111,17 @@ class AdminService:
                     d["comments"] = row[7]
                     d["request_id"] = row[8]
                     rejected_requests.append(d)
+                return {
+                    "rejected_requests" : rejected_requests,
+                    "rejected_pagination": {
+                        "total_pages" : rejected_pages,
+                        "next_page" : rejected_next_page,
+                        "prev_page" : rejected_previous_page
+                    }
+                }
         
             case "approved":
+                approved_requests = []
                 row = self.db.execute_query("select count(*) from submissions where status='A'", fetch_one=True)
                 total_approved = row[0]
                 approved_pages = (total_approved + per_page - 1) // per_page
@@ -137,32 +144,16 @@ class AdminService:
                     d["request_id"] = row[7]
                     approved_requests.append(d)  
 
-        return {
-            "admins": admins,
-            "pending_requests": pending_requests,
-            "rejected_requests": rejected_requests,
-            "approved_requests": approved_requests,
-            "admin_pagination": {
-                "prev_page": admin_prev_page,
-                "next_page": admin_next_page,
-                "total_pages": admin_pages,
-            },
-            "approved_pagination": {
-                "total_pages": approved_pages,
-                "next_page": approved_next_page,
-                "prev_page": approved_previous_page,
-            },
-            "rejected_pagination": {
-                "total_pages": rejected_pages,
-                "next_page": rejected_next_page,
-                "prev_page": rejected_previous_page,
-            },
-            "pending_pagination": {
-                "total_pages": pending_pages,
-                "next_page": pending_next_page,
-                "prev_page": pending_previous_page,
-            }
-        }
+                return {
+                    "approved_requests" : approved_requests,
+                    "approved_pagination": {
+                        "total_pages" : approved_pages,
+                        "next_page" : approved_next_page,
+                        "prev_page" : approved_previous_page
+                    }
+                }
+            case _:
+                return {"none":None}
     
 
     def edit_admin(self, user_id, first_name, last_name, username, email, role) -> bool:

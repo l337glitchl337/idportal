@@ -94,6 +94,7 @@ def admin_panel():
     active_tab = request.args.get("active_tab", "pending") 
     current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"], "user_id": session["user_id"]}
     data = admin_service.populate_admin_panel(page, active_tab=active_tab)
+    print(data)
     return render_template("admin_panel.html", **data, active_tab=active_tab, current_user=current_user, current_page=page)
 
 @blueprint.route("/create_admin_account", methods = ["POST"])

@@ -6,10 +6,11 @@
       <h5 class="mb-0">Please confirm your details</h5>
     </div>
     <ul class="list-group list-group-flush">
-      <li class="list-group-item bg-dark text-light">First Name: {{ first_name }}</li>
-      <li class="list-group-item bg-dark text-light">Last Name: {{ last_name }}</li>
-      <li class="list-group-item bg-dark text-light">ID: {{ student_id }}</li>
-      <li class="list-group-item bg-dark text-light">Campus: {{ campus }}</li>
+      {% for k, v in attrs.items() %}
+        {% if k != 'cn' and k != 'dn' %}
+        <li class="list-group-item bg-dark text-light">{{ k }}: {{ v }}</li>
+        {% endif %}
+      {% endfor %}
     </ul>
     <div class="card-body text-center">
       <a href="{{ url_for('main.upload_form') }}"

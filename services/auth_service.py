@@ -93,17 +93,15 @@ class AuthService:
     def set_session_attrs(self, attrs) -> bool:
         try:
             session.clear()
-            session["email"] = attrs["dn"]
-            session["first_name"] = attrs["givenName"]
-            session["last_name"] = attrs["sn"]
-            session["student_id"] = attrs["title"]
-            session["campus"] = attrs["o"]
-            session["cn"] = attrs["cn"]
-            session["mail"] = attrs["mail"]
-            self.logger.info(f"Succesfully set session attibutes for {attrs["mail"][0].decode()}")
+            for k, v in attrs.items():
+                session[k] = v
+            session["user_logged_in"] = True
+            session["attrs"] = attrs
+
+            self.logger.info(f"Succesfully set session attibutes for: {attrs}")
             return True
         except:
-            self.logger.error(f"Could not set session attributes for {attrs["email"][0].decode()}")
+            self.logger.error(f"Could not set session attributes for: {attrs}")
             return False
         
     def check_bfa(self, email, ip_address, failed) -> bool:

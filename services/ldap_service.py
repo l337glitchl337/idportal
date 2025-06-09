@@ -1,6 +1,6 @@
 from flask import request
 from factories import get_logger
-import traceback
+import json
 import ldap
 
 class LDAPService:
@@ -10,6 +10,8 @@ class LDAPService:
         self.ldap_bind_pwd = app.config["LDAP_BIND_PWD"]
         self.ldap_search_base = app.config["LDAP_SEARCH_BASE"]
         self.ldap_search_filter = app.config["LDAP_SEARCH_FILTER"]
+        self.ldap_attributes = json.loads(app.config["LDAP_ATTRIBUTES"])
+        self.ldap_attributes_keys = list(self.ldap_attributes.values())
         self.auth_service = auth_service
         self.logger = get_logger("ldap_service")
         self.logger.info("LDAPService initialized.")
@@ -19,19 +21,18 @@ class LDAPService:
             conn = ldap.initialize(self.ldap_server)
             conn.simple_bind_s(self.ldap_bind_dn, self.ldap_bind_pwd)
             filter = self.ldap_search_filter.replace("OBJ", email)
-            results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter)
+            results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter, self.ldap_attributes_keys)
             conn.unbind_s()
         except Exception:
             self.logger.exception("An LDAP error as occured while searching for a user!")
             return None, False
-
+        
+        attrs = {}
         if results:
-            self.logger.info(f"Succesully found {email} from LDAP.")
-            dn, attrs = results[0]
-            return dn, attrs 
-        else:
-            self.logger.warning(f"Unable to find {email} from LDAP.")
-            return None, False
+            dn, entry = results[0]
+            for display_name, ldap_key in self.ldap_attributes.items():
+                attrs[display_name] = entry.get(ldap_key, [None])[0].decode()
+        return dn, attrs
 
     def auth_user(self, email, password) -> bool:
         if self.auth_service.check_bfa(email, request.remote_addr, False):

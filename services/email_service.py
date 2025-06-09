@@ -18,10 +18,10 @@ class EmailService:
         request_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         html_body = render_template('email/admin_email.html',
-                                    subject=f"{session["cn"][0].decode()} has requested an ID!",
-                                    student_name=session["cn"][0].decode(),
-                                    student_id=session["student_id"][0].decode(),
-                                    campus=session["campus"][0].decode(),
+                                    subject=f"{session["cn"]} has requested an ID!",
+                                    student_name=session["cn"],
+                                    student_id=session["ID Number"],
+                                    campus=session["Location"],
                                     request_time=request_time)
         admin_msg = Message(
             subject="New ID request!",
@@ -30,12 +30,12 @@ class EmailService:
         
         html_body = render_template('email/student_email.html',
                                     subject=f"We have received your ID request!",
-                                    student_name=session["cn"][0].decode(),
+                                    student_name=session["cn"],
                                     current_year="2025",
                                     request_id="123456")
         student_msg = Message(
             subject="Thank you for submitting your request.",
-            recipients=[session["mail"][0].decode()],
+            recipients=[session["Email"]],
             html=html_body)
         
         messages.append(admin_msg)
@@ -49,7 +49,7 @@ class EmailService:
             self.logger.exception("An error occurred while trying to send an email alert!")
             return False
         
-        self.logger.info(f"Succesfully sent email alert to: {self.app.config["MAIL_DEFAULT_RECIP"]}, {session["mail"][0].decode()}")
+        self.logger.info(f"Succesfully sent email alert to: {self.app.config["MAIL_DEFAULT_RECIP"]}, {session["Email"]}")
         return True
     
     def send_welcome_email(self, username, password, first_name, email) -> bool:

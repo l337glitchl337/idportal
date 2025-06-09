@@ -26,6 +26,7 @@ def create_app():
             "FORGOT_PASSWORD_URL" : app.config["FORGOT_PASSWORD_URL"],
             "REVIEW_REQUEST_URL" : app.config["REVIEW_REQUEST_URL"]
         }
+    app.json.sort_keys = False
     app.db = Database(app)
     app.admin_service = AdminService(app.db)
     app.auth_service = AuthService(app.db)

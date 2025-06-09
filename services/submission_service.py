@@ -8,17 +8,17 @@ class SubmissionService:
         self.logger.info("SubmissionService initialized")
 
     def create_submission(self, photo_filepath, license_filepath):
-        first_name = session["first_name"][0].decode()
-        last_name = session["last_name"][0].decode()
-        student_id = session["student_id"][0].decode()
-        campus = session["campus"][0].decode()
-        email = session["mail"][0].decode()
+        first_name = session["First Name"]
+        last_name = session["Last Name"]
+        id_number = session["ID Number"]
+        location = session["Location"]
+        email = session["Email"]
         result = self.db.execute_query("""insert into submissions 
-                                       (first_name, last_name, email, student_id, 
-                                       campus, photo_filepath, license_filepath) 
+                                       (first_name, last_name, email, id_number, 
+                                       location, photo_filepath, license_filepath) 
                                        values (%s, %s, %s, %s, %s, %s, %s)""",
-                                       (first_name, last_name, email, student_id, 
-                                        campus, photo_filepath, license_filepath))
+                                       (first_name, last_name, email, id_number, 
+                                        location, photo_filepath, license_filepath))
         if not result:
             return False
         self.logger.info(f"Succesfully created submission for {email}")

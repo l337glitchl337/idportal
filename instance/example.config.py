@@ -20,6 +20,12 @@ LDAP_BIND_PWD           = "your-ldap-password"
 LDAP_SEARCH_BASE        = "ou=Users,dc=example,dc=com" 
 LDAP_SEARCH_FILTER      = "(mail=OBJ)"
 
+# LDAP_ATTRIBUTES is a JSON-formatted string that maps user-friendly key names to their corresponding LDAP attributes.
+# For example, in a development environment, 'givenName' might represent the user's first name, while 'title' might represent the user ID.
+# These key names are used in session variables and other parts of IDPortal to perform various tasks. 
+# Do not modify or remove the key names; only update the values to match your LDAP instance's attribute names.
+LDAP_ATTRIBUTES         = '{"First Name":"givenName","Last Name":"sn","ID Number":"title","Location":"o","cn":"cn","Email":"mail"}'
+
 # Branding, title for the website and logo
 
 SITE_TITLE              = "Demo IDPortal" 

@@ -12,6 +12,7 @@ class BaseConfig:
     LDAP_BIND_PWD           = os.getenv("LDAP_BIND_PWD")
     LDAP_SEARCH_BASE        = os.getenv("LDAP_SEARCH_BASE")
     LDAP_SEARCH_FILTER      = os.getenv("LDAP_SEARCH_FILTER")
+    LDAP_ATTRIBUTES         = os.getenv("LDAP_ATTRIBUTES", "{}")
     
     #Branding, title for the website and logo
     SITE_TITLE              = os.getenv("SITE_TITLE")
@@ -24,6 +25,7 @@ class BaseConfig:
     COMPANY_PHONE           = os.getenv("COMPANY_PHONE")
     COMPANY_CURRENT_YEAR    = os.getenv("COMPANY_CURRENT_YEAR")
     COMPANY_EMAIL_SIGNATURE = os.getenv("COMPANY_EMAIL_SIGNATURE")
+
     #Email config
     MAIL_SERVER             = os.getenv("MAIL_SERVER")
     MAIL_PORT               = os.getenv("MAIL_PORT")

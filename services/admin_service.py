@@ -27,7 +27,6 @@ class AdminService:
         pending_requests = []
         approved_requests = []
         rejected_requests = []
-        offset = (page - 1) * per_page
         total_admins = 0
         admin_pages = 0
         admin_prev_page = 0
@@ -44,6 +43,7 @@ class AdminService:
         approved_pages = 0
         approved_previous_page = 0
         approved_next_page = 0
+        offset = (page - 1) * per_page
 
 
         match active_tab:
@@ -74,7 +74,7 @@ class AdminService:
                 pending_previous_page = page - 1 if page > 1 else None
                 pending_next_page = page + 1 if page < pending_pages else None
                 
-                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
+                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, id_number, location, 
                             to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
                             photo_filepath, license_filepath, request_id
                             from submissions where status='N' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
@@ -82,8 +82,8 @@ class AdminService:
                     d = {}
                     d["full_name"] = row[0]
                     d["email"] = row[1]
-                    d["student_id"] = row[2] 
-                    d["campus"] = row[3]
+                    d["id_number"] = row[2] 
+                    d["location"] = row[3]
                     d["timestamp_inserted"] = row[4]
                     d["photo_filepath"] = row[5]
                     d["license_filepath"] = row[6]
@@ -97,7 +97,7 @@ class AdminService:
                 rejected_previous_page = page - 1 if page > 1 else None
                 rejected_next_page = page + 1 if page < rejected_pages else None
 
-                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
+                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, id_number, location, 
                             to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
                             photo_filepath, license_filepath, comments, request_id
                             from submissions where status='R' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
@@ -105,8 +105,8 @@ class AdminService:
                     d = {}
                     d["full_name"] = row[0]
                     d["email"] = row[1]
-                    d["student_id"] = row[2] 
-                    d["campus"] = row[3]
+                    d["id_number"] = row[2] 
+                    d["location"] = row[3]
                     d["timestamp_inserted"] = row[4]
                     d["photo_filepath"] = row[5]
                     d["license_filepath"] = row[6]
@@ -121,7 +121,7 @@ class AdminService:
                 approved_previous_page = page - 1 if page > 1 else None
                 approved_next_page = page + 1 if page < approved_pages else None
 
-                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, student_id, campus, 
+                rows = self.db.execute_query("""select first_name || ' ' || last_name as full_name, email, id_number, location, 
                             to_char(timestamp_inserted, 'yyyy-mm-dd hh12:mi:ss AM') as timestamp_inserted,
                             photo_filepath, license_filepath, request_id
                             from submissions where status='A' order by request_id limit %s offset %s""", (per_page, offset), fetch_all=True)
@@ -129,8 +129,8 @@ class AdminService:
                     d = {}
                     d["full_name"] = row[0]
                     d["email"] = row[1]
-                    d["student_id"] = row[2] 
-                    d["campus"] = row[3]
+                    d["id_number"] = row[2] 
+                    d["location"] = row[3]
                     d["timestamp_inserted"] = row[4]
                     d["photo_filepath"] = row[5]
                     d["license_filepath"] = row[6]

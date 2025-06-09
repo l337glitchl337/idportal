@@ -2,67 +2,8 @@
 
 {% block title %}Admin Login - {{ SITE_TITLE }} {% endblock %}
 
-{% block head %}
-  <!-- admin‑specific CSS -->
-<!--   <style>
-    .login-container {
-      max-width: 400px;
-      margin: 80px auto;
-      padding: 20px;
-    }
-
-    /* match student login logo size */
-    .id-card {
-      max-width: 320px;
-      width: 100%;
-      display: block;
-      margin: 0.5rem auto 20px; /* same vertical spacing as student */
-      border: none;
-    }
-
-    .btn-login {
-      background-color: #007bff;
-      border: none;
-      color: #fff;
-    }
-  </style> -->
-{% endblock %}
 
 {% block content %}
-<!-- <div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-<h3 class="mb-4">Administrator Portal</h3>
-<div class="card shadow">
-  <div class="card-body text-center"></div>
-  <img src="{{ url_for('static', filename='admin_logo.png') }}"
-       alt="Admin Badge"
-       class="id-card-img">
-  <form method="POST" action="{{ url_for('main.admin') }}">
-    <div class="mb-3">
-      <input type="text"
-             name="username"
-             class="form-control"
-             placeholder="Admin Username"
-             required
-             autofocus>
-    </div>
-    <div class="mb-3">
-      <input type="password"
-             name="password"
-             class="form-control"
-             placeholder="Password"
-             required>
-    </div>
-    <button type="submit" class="btn btn-primary w-100">Sign In</button>
-  </form>
-  </div>
-  </div>
-</div>
-</div> -->
-
-
-
-
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
       <!-- Page title -->
@@ -74,7 +15,7 @@
                alt="ID Card Template"
                class="id-card-img">
 
-          <form method="POST" action="{{ url_for('main.admin') }}">
+          <form method="POST" action="{{ url_for('admin.admin') }}">
             <div class="mb-3 text-start">
               <label class="form-label">Username</label>
               <input type="text" class="form-control" id="username"
@@ -88,7 +29,7 @@
             <button type="submit" class="btn btn-primary w-100">Log In</button>
           </form>
           <div class="text-center mt-3">
-                <a href="{{ url_for('main.forgot_password') }}">Trouble signining in?</a>
+                <a href="{{ url_for('admin.forgot_password') }}">Trouble signining in?</a>
             </div>
         </div>
       </div>

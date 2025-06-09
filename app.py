@@ -1,6 +1,7 @@
 from flask import Flask
 from dotenv import load_dotenv
 from services import Database, AdminService, EmailService, LDAPService, SubmissionService, AuthService
+from routes import admin_blueprint, user_blueprint
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -9,8 +10,9 @@ def create_app():
     app.config.from_object(f'config.{env}Config')
     app.config.from_pyfile('config.py', silent=True)
 
-    from routes import blueprint
-    app.register_blueprint(blueprint=blueprint)
+    #app.register_blueprint(blueprint=blueprint)
+    app.register_blueprint(admin_blueprint, url_prefix="/")
+    app.register_blueprint(user_blueprint, url_prefix="/")
 
     @app.context_processor
     def inject():

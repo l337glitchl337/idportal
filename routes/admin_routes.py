@@ -4,70 +4,9 @@ import traceback
 import re
 import os
 
-blueprint = Blueprint("main", __name__)
+admin_blueprint = Blueprint("admin", __name__)
 
-@blueprint.route("/")
-def home():
-    return render_template("login.html")
-
-@blueprint.route("/login", methods=["POST"])
-def login():
-    ldap_service = current_app.ldap_service
-    auth_service = current_app.auth_service
-    if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-
-        attrs, result = ldap_service.auth_user(email, password)
-
-        if result:
-            auth_service.set_session_attrs(attrs)
-            return redirect(url_for('main.landing'))
-        else:
-            flash("Error: Please check email/password", "danger")
-            return redirect(url_for("main.home"))
-
-@blueprint.route("/landing", methods=["GET"])
-@DecoratorHelper.check_login
-def landing():
-    print(session["attrs"])
-    return render_template("landing.html", attrs=session['attrs'])
-
-@blueprint.route("/upload_form")
-@DecoratorHelper.check_login
-def upload_form():
-    return render_template("upload_photo.html")
-    
-@blueprint.route("/upload_photo", methods = ["GET", "POST"])
-@DecoratorHelper.check_login
-def upload_photo():
-    submission_service = current_app.submission_service
-    email_service = current_app.email_service
-    if "photo" in request.files and "drivers_license" in request.files:
-        photo = request.files["photo"]
-        drivers_license = request.files["drivers_license"]
-        if photo.filename == '' or drivers_license.filename == '':
-            flash("Error", "danger")
-            return redirect(url_for("main.home"))
-        if photo and drivers_license:
-            pfn = UtilityHelper.generate_unique_filename(photo.filename)
-            lfn = UtilityHelper.generate_unique_filename(drivers_license.filename)
-
-
-            photo.save(os.path.join(current_app.config["UPLOAD_FOLDER"], pfn))
-            drivers_license.save(os.path.join(current_app.config["UPLOAD_FOLDER"], lfn))
-
-            if(submission_service.create_submission(pfn, lfn)):
-                flash("Documents uploaded successfully!", "success")
-                flash("You will receive an email once your ID is ready!", "success")
-
-                email_service.send_email_alert()
-                return redirect(url_for("main.logout"))
-            else:
-                flash("An error has occurred, please try again later", "danger")
-                return redirect(url_for("main.logout"))
-        
-@blueprint.route("/admin", methods = ["POST", "GET"])
+@admin_blueprint.route("/admin", methods = ["POST", "GET"])
 def admin():
     if request.method == "POST":
         username = request.form.get("username")
@@ -77,14 +16,14 @@ def admin():
         if auth_service.admin_login(username, password):
             if session["on_login"]:
                 flash("Please change your password before proceeding", "danger")
-                return redirect(url_for("main.change_admin_password"))
-            return redirect(url_for("main.admin_panel", active_tab="pending"))
+                return redirect(url_for("admin.change_admin_password"))
+            return redirect(url_for("admin.admin_panel", active_tab="pending"))
         else:
             flash("Invalid username/password combination", "danger")
-            return redirect(url_for("main.admin"))
+            return redirect(url_for("admin.admin"))
     return render_template("admin.html")
 
-@blueprint.route("/admin_panel")
+@admin_blueprint.route("/admin_panel")
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def admin_panel():
@@ -94,10 +33,9 @@ def admin_panel():
     active_tab = request.args.get("active_tab", "pending") 
     current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"], "user_id": session["user_id"]}
     data = admin_service.populate_admin_panel(page, active_tab=active_tab)
-    print(data)
     return render_template("admin_panel.html", **data, active_tab=active_tab, current_user=current_user, current_page=page)
 
-@blueprint.route("/create_admin_account", methods = ["POST"])
+@admin_blueprint.route("/create_admin_account", methods = ["POST"])
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def create_admin_account():
@@ -115,9 +53,9 @@ def create_admin_account():
         email_service.send_welcome_email(username, password, first_name, email)
     else:
         flash("Failed to create admin account. Please check logs for more details", "danger")
-    return redirect(url_for("main.admin_panel", active_tab="admins"))
+    return redirect(url_for("admin.admin_panel", active_tab="admins"))
 
-@blueprint.route("/logout")
+@admin_blueprint.route("/logout")
 def logout():
     user_type = 0
     if "admin_username" in session:
@@ -130,14 +68,14 @@ def logout():
         print(traceback.format_exc())
         flash("Error: Unable to logout. Please try again later", "danger")
         if user_type:
-            return redirect(url_for("main.admin_panel"))
-        return redirect(url_for("main.home"))
+            return redirect(url_for("admin.admin_panel"))
+        return redirect(url_for("user.home"))
     if user_type:
         flash("Logged out successfully!", "success")
-        return redirect(url_for("main.admin"))
-    return redirect(url_for("main.home"))
+        return redirect(url_for("admin.admin"))
+    return redirect(url_for("user.home"))
 
-@blueprint.route("/reject_submissiion", methods=["POST"])
+@admin_blueprint.route("/reject_submissiion", methods=["POST"])
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def reject_submission():
@@ -150,7 +88,7 @@ def reject_submission():
     else:
         return {"success": False, "message": "Failed to reject submission. Please check logs for more details"}
 
-@blueprint.route("/approve_submission", methods=["POST"])
+@admin_blueprint.route("/approve_submission", methods=["POST"])
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def approve_submission():
@@ -161,7 +99,7 @@ def approve_submission():
     else:
         return {"success": False, "message": "Failed to approve submission. Please check logs for more details"}
     
-@blueprint.route("/change_admin_password", methods=["POST", "GET"])
+@admin_blueprint.route("/change_admin_password", methods=["POST", "GET"])
 @DecoratorHelper.check_admin_login
 def change_admin_password():
     auth_service = current_app.auth_service
@@ -175,23 +113,23 @@ def change_admin_password():
             current_password = request.form.get("current_password")
             if not auth_service.compare_password(session["admin_username"], current_password):
                 flash("Current password is incorrect", "danger")
-                return redirect(url_for("main.admin_panel", active_tab="profile"))
+                return redirect(url_for("admin.admin_panel", active_tab="profile"))
         new_password = request.form.get("new_password")
         confirm_password = request.form.get("confirm_password")
         if new_password != confirm_password:
             flash("Passwords do not match", "danger")
-            return redirect(url_for("main.change_admin_password"))
+            return redirect(url_for("admin.change_admin_password"))
         if auth_service.update_admin_password(session["admin_username"], new_password):
             if "forgot_password_token" in session:
                 auth_service.del_forgot_password_token(session["forgot_password_token"])
             session.clear()
             flash("Password changed successfully!", "success")
-            return redirect(url_for("main.admin"))
+            return redirect(url_for("admin.admin"))
         else:
             flash("Error changing password, please try again!", "danger")
-            return redirect(url_for("main.change_admin_password"))
+            return redirect(url_for("admin.change_admin_password"))
         
-@blueprint.route("/forgot_password", methods=["POST", "GET"])
+@admin_blueprint.route("/forgot_password", methods=["POST", "GET"])
 def forgot_password():
     email_service = current_app.email_service
     auth_service = current_app.auth_service
@@ -203,7 +141,7 @@ def forgot_password():
         else:
             email_service.send_forgot_password_email(**{"username": identifier})
         flash("If your account exists, you will receive an email with instructions to reset your password.", "info")
-        return redirect(url_for("main.admin"))
+        return redirect(url_for("admin.admin"))
     if request.method == "GET":
         if request.args.get("token"):
             token = request.args.get("token")
@@ -211,13 +149,13 @@ def forgot_password():
             if username:
                 session["admin_username"] = username
                 session["forgot_password_token"] = token
-                return redirect(url_for("main.change_admin_password"))
+                return redirect(url_for("admin.change_admin_password"))
             else:
                 flash("Invalid or expired token", "danger")
-                return redirect(url_for("main.admin"))
+                return redirect(url_for("admin.admin"))
         return render_template("admin_forgot_password.html")
     
-@blueprint.route("/batch_edit", methods=["POST"])
+@admin_blueprint.route("/batch_edit", methods=["POST"])
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def batch_edit():
@@ -243,16 +181,16 @@ def batch_edit():
         return {"success": True, "message": "All submissions rejected successfully!"}
     else:
         flash("Invalid action selected", "danger")
-        return redirect(url_for("main.admin_panel"))
+        return redirect(url_for("admin.admin_panel"))
 
-@blueprint.route("/edit_admin_account", methods=["POST"])
+@admin_blueprint.route("/edit_admin_account", methods=["POST"])
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def edit_admin_account():
     admin_service = current_app.admin_service
     if session["role"] != "super":
         flash("You do not have permission to edit admin accounts", "danger")
-        return redirect(url_for("main.admin_panel", active_tab="admins"))
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
     user_id = request.form.get("user_id")
     first_name = request.form.get("first_name")
     last_name = request.form.get("last_name")
@@ -262,16 +200,16 @@ def edit_admin_account():
 
     if user_id == session["user_id"]:
         flash("You cannot edit your own account from here. Please use the profile page.", "danger")
-        return redirect(url_for("main.admin_panel", active_tab="profile"))
+        return redirect(url_for("admin.admin_panel", active_tab="profile"))
 
     if admin_service.edit_admin(user_id, first_name, last_name, username, email, role):
         flash("Admin account updated successfully!", "success")
-        return redirect(url_for("main.admin_panel", active_tab="admins"))
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
     else:
         flash("Failed to update admin account. Please check logs for more details", "danger")
-        return redirect(url_for("main.admin_panel", active_tab="admins"))
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
     
-@blueprint.route("/delete_admin_account", methods=["POST"])
+@admin_blueprint.route("/delete_admin_account", methods=["POST"])
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def delete_admin_account():

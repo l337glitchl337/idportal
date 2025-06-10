@@ -14,16 +14,20 @@ ID Portal is a web-based tool designed for organizations to accept and manage ID
 A Docker release is planned for easy deployment in the future.
 
 ## Prerequisites
-Python 3.10 or greater
-Postgres installation
-LDAP Instance
+```
+Python >= 3.10
+Active LDAP/Active Directory
+Linux server (instructions will assume you are usinfg Fefora/RHEL/CentOS)
+````
 
-Packages:
+Required packages:
 
+```
 libpq-devel 
 openldap-devel 
 gcc 
 python3.12-devel
+```
 
 ## Basic installation
 

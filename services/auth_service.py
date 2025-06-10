@@ -12,29 +12,33 @@ class AuthService:
     
     def admin_login(self, username, password) -> bool:
         self.logger.info(f"[{request.remote_addr}] attempting to login with username: {username}")
-        row = self.db.execute_query("""SELECT first_name, last_name, username, email,
-                                    password, status, role, on_login,
-                                    id FROM admins WHERE username = %s""", 
-                                    (username,), fetch_one=True)
-        if not row:
-            self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - User not found")
+        if self.check_bfa(username, request.remote_addr, False):
+            row = self.db.execute_query("""SELECT first_name, last_name, username, email,
+                                        password, status, role, on_login,
+                                        id FROM admins WHERE username = %s""", 
+                                        (username,), fetch_one=True)
+            if not row:
+                self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - User not found")
+                return False
+            self.logger.debug(f"Row from db on admin loging: {row}")
+            
+            db_password = row[4]
+            if not bcrypt.checkpw(password.encode("utf-8"), db_password.encode("utf-8")):
+                self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - Incorrect password")
+                self.check_bfa(username, request.remote_addr, True)
+                return False
+            session.clear()
+            session["first_name"] = row[0]
+            session["last_name"] = row[1]
+            session["admin_username"] = row[2]
+            session["email"] = row[3]
+            session["role"] = row[6]
+            session["on_login"] = row[7]
+            session["user_id"] = row[8]
+            self.logger.info(f"[{request.remote_addr}] login successful for user: {username}")
+            return True
+        else:
             return False
-        self.logger.debug(f"Row from db on admin loging: {row}")
-        
-        db_password = row[4]
-        if not bcrypt.checkpw(password.encode("utf-8"), db_password.encode("utf-8")):
-            self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - Incorrect password")
-            return False
-        session.clear()
-        session["first_name"] = row[0]
-        session["last_name"] = row[1]
-        session["admin_username"] = row[2]
-        session["email"] = row[3]
-        session["role"] = row[6]
-        session["on_login"] = row[7]
-        session["user_id"] = row[8]
-        self.logger.info(f"[{request.remote_addr}] login successful for user: {username}")
-        return True
     
     def update_admin_password(self, username, new_password) -> bool:
         self.logger.info(f"{username} attempting to change password.")

@@ -9,8 +9,7 @@ def create_app():
     env = app.config.get('ENV', 'production').title()
     app.config.from_object(f'config.{env}Config')
     app.config.from_pyfile('config.py', silent=True)
-
-    #app.register_blueprint(blueprint=blueprint)
+    
     app.register_blueprint(admin_blueprint, url_prefix="/")
     app.register_blueprint(user_blueprint, url_prefix="/")
 

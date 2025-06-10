@@ -1,8 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, Blueprint, current_app, session
-from helpers import DecoratorHelper, UtilityHelper
+from helpers import DecoratorHelper
 import traceback
 import re
-import os
 
 admin_blueprint = Blueprint("admin", __name__)
 
@@ -127,7 +126,9 @@ def change_admin_password():
             return redirect(url_for("admin.admin"))
         else:
             flash("Error changing password, please try again!", "danger")
-            return redirect(url_for("admin.change_admin_password"))
+            if 'forgot_password_token' in session:
+                return redirect(url_for("admin.change_admin_password"))
+            return redirect(url_for('admin.admin_panel', active_tab='profile'))
         
 @admin_blueprint.route("/forgot_password", methods=["POST", "GET"])
 def forgot_password():

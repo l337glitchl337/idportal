@@ -2,7 +2,6 @@ from flask_mail import Mail, Message
 from flask import render_template, session
 from factories import get_logger
 import datetime
-import traceback
 
 class EmailService:
     def __init__(self, db=None, app=None):
@@ -32,7 +31,7 @@ class EmailService:
                                     subject=f"We have received your ID request!",
                                     student_name=session["cn"],
                                     current_year="2025",
-                                    request_id="123456")
+                                    request_id=session["request_id"])
         student_msg = Message(
             subject="Thank you for submitting your request.",
             recipients=[session["Email"]],

@@ -21,6 +21,8 @@ class SubmissionService:
                                         location, photo_filepath, license_filepath))
         if not result:
             return False
+        request_id = self.db.execute_query("select request_id from submissions where email=%s", (email,), fetch_one=True)
+        session["request_id"] = request_id[0]
         self.logger.info(f"Succesfully created submission for {email}")
         return True
     

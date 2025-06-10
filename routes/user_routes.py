@@ -28,7 +28,6 @@ def login():
 @user_blueprint.route("/landing", methods=["GET"])
 @DecoratorHelper.check_login
 def landing():
-    print(session["attrs"])
     return render_template("landing.html", attrs=session['attrs'])
 
 @user_blueprint.route("/upload_form")

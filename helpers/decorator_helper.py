@@ -9,7 +9,7 @@ class DecoratorHelper:
             if 'user_logged_in' in session and session['user_logged_in']:
                 return f(*args, **kwargs)
             flash("Please login first", "danger")
-            return redirect(url_for("main.home"))
+            return redirect(url_for("user.home"))
         return decorated
     
     @staticmethod
@@ -18,13 +18,13 @@ class DecoratorHelper:
         def decorated(*args, **kwargs):
             # Allow access to change_admin_password if forgot_password_token is set
             if 'forgot_password_token' in session:
-                if request.endpoint == "main.change_admin_password":
+                if request.endpoint == "admin.change_admin_password":
                     return f(*args, **kwargs)
                 else:
-                    return redirect(url_for("main.admin"))
+                    return redirect(url_for("admin.admin"))
             if 'admin_username' not in session:
                 flash("Please login first", "danger")
-                return redirect(url_for("main.admin"))
+                return redirect(url_for("admin.admin"))
             return f(*args, **kwargs)
         return decorated
 
@@ -34,6 +34,6 @@ class DecoratorHelper:
         def decorated(*args, **kwargs):
             if session["on_login"] == 1:
                 flash("Please change your password first!", "danger")
-                return redirect(url_for("main.admin"))
+                return redirect(url_for("admin.admin"))
             return f(*args, **kwargs)
         return decorated

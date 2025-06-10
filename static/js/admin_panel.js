@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Populate the modal body with a form
       editAdminModalBody.innerHTML = `
         <form id="createAdminForm" method="POST" action="/edit_admin_account">
-          <input type="hidden" name="user_id" value="${admin.user_id}">
+          <input type="hidden" name="user_id" value="${admin.id}">
           <div class="mb-3">
         <label for="firstName" class="form-label">First Name</label>
         <input type="text" class="form-control" id="firstName" name="first_name" value="${firstName}" required>
@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Populate the modal body with confirmation message and confirm button
       deleteAdminModalBody.innerHTML = `
         <p>Are you sure you want to delete admin <strong>${admin.full_name || admin.username}</strong>?</p>
-        <input type="hidden" id="deleteAdminUserId" value="${admin.user_id}">
+        <input type="hidden" id="deleteAdminUserId" value="${admin.id}">
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">No</button>
           <button type="button" class="btn btn-danger" id="confirmDeleteAdminBtn">Yes, Delete</button>

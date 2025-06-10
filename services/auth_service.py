@@ -2,6 +2,7 @@ import bcrypt
 from flask import session, flash, current_app, request
 from uuid import uuid4
 from factories import get_logger
+from helpers import UtilityHelper
 
 class AuthService:
     def __init__(self, db=None):
@@ -37,6 +38,8 @@ class AuthService:
     
     def update_admin_password(self, username, new_password) -> bool:
         self.logger.info(f"{username} attempting to change password.")
+        if not UtilityHelper.check_password_complexity(new_password):
+            return False
         new_password = new_password.encode('utf-8')
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(new_password, salt).decode("utf-8")
@@ -76,14 +79,14 @@ class AuthService:
         return url, token
     
     def validate_forgot_password_token(self, token) -> bool:
-        row = self.db.execute_query("""select a.email from admin_forgot_password b join 
+        row = self.db.execute_query("""select a.username from admin_forgot_password b join 
                                     admins a on b.user_id=a.id where token=%s 
                                     and expire_after > now()""", (token,), fetch_one=True)
         if not row:
             self.logger.info(f"Unable to validate token {token}")
             return False
         self.logger.info(f"Token succesfully validated for user {row[0]}")
-        self.logger.debug(f"Token: {token} email {row[0]}")
+        self.logger.debug(f"Token: {token} username {row[0]}")
         return row[0]
     
     def del_forgot_password_token(self, token) -> bool:

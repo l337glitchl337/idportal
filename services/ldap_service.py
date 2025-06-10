@@ -12,6 +12,7 @@ class LDAPService:
         self.ldap_search_filter = app.config["LDAP_SEARCH_FILTER"]
         self.ldap_attributes = json.loads(app.config["LDAP_ATTRIBUTES"])
         self.ldap_attributes_keys = list(self.ldap_attributes.values())
+        self.ldap_use_tls = app.config["LDAP_USE_TLS"]
         self.auth_service = auth_service
         self.logger = get_logger("ldap_service")
         self.logger.info("LDAPService initialized.")
@@ -19,6 +20,8 @@ class LDAPService:
     def search_user(self, email) -> str:
         try:
             conn = ldap.initialize(self.ldap_server)
+            if self.ldap_use_tls == "True":
+                conn.start_tls_s()
             conn.simple_bind_s(self.ldap_bind_dn, self.ldap_bind_pwd)
             filter = self.ldap_search_filter.replace("OBJ", email)
             results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter, self.ldap_attributes_keys)
@@ -43,6 +46,8 @@ class LDAPService:
             
             try:
                 conn = ldap.initialize(self.ldap_server)
+                if self.ldap_use_tls == "True":
+                    conn.start_tls_s()
                 conn.simple_bind_s(dn, password)
                 conn.unbind_s()
                 attrs["dn"] = dn

@@ -9,3 +9,4 @@ instance/config.py
 logs/**
 !logs/
 !logs/.gitignore
+init_db/

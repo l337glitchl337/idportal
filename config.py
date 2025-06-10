@@ -13,6 +13,7 @@ class BaseConfig:
     LDAP_SEARCH_BASE        = os.getenv("LDAP_SEARCH_BASE")
     LDAP_SEARCH_FILTER      = os.getenv("LDAP_SEARCH_FILTER")
     LDAP_ATTRIBUTES         = os.getenv("LDAP_ATTRIBUTES", "{}")
+    LDAP_USE_TLS            = os.getenv("LDAP_USE_TLS")
     
     #Branding, title for the website and logo
     SITE_TITLE              = os.getenv("SITE_TITLE")

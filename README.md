@@ -8,62 +8,69 @@ ID Portal is a web-based tool designed for organizations to accept and manage ID
 - Admin dashboard for managing and reviewing submissions
 - User authentication and lookup via LDAP
 - Admin authentication and submission storage using PostgreSQL
+
 ## Deployment Notes
 
 A Docker release is planned for easy deployment in the future.
 
-## Project Structure
+## Prerequisites
+Python 3.10 or greater
+Postgres installation
+LDAP Instance
+
+Packages:
+
+libpq-devel 
+openldap-devel 
+gcc 
+python3.12-devel
+
+## Basic installation
+
+**Note this basic installiation is just for testing and is not production ready**
+
+Download repo:
+```gh repo clone l337glitchl337/idportal```
+
+Create a venv (optional):
 
 ```
-idportal/
-├── app.py
-├── helpers
-│   ├── decorator_helper.py
-│   ├── __init__.py
-│   └── utility_helper.py
-├── instance
-├── README.md
-├── requirements.txt
-├── routes.py
-├── services
-│   ├── admin_service.py
-│   ├── auth_service.py
-│   ├── db_utils.py
-│   ├── email_service.py
-│   ├── __init__.py
-│   ├── ldap_service.py
-│   └── submission_service.py
-├── static
-│   ├── css
-│   │   └── admin_panel.css
-│   ├── favicon.ico
-│   ├── js
-│   │   └── admin_panel.js
-│   ├── style.css
-│   └── uploads
-└── templates
-    ├── admin_forgot_password.html
-    ├── admin.html
-    ├── admin_panel.html
-    ├── base.html
-    ├── change_admin_password.html
-    ├── email
-    │   ├── admin_email.html
-    │   ├── admin_welcome.html
-    │   ├── forgot_password.html
-    │   └── student_email.html
-    ├── includes
-    │   └── macros.html
-    ├── landing.html
-    ├── login.html
-    └── upload_photo.html
+cd idportal-main
+python -m venv venv
 ```
 
-### Prerequisites
+Activate venv:
 
-- A running PostgreSQL instance
-- An LDAP environment
-- Python binaries for `psycopg2` and `ldap` modules
+```
+. venv/bin/activate
+```
+
+Install depenencies:
+
+```
+sudo dnf install libpq-devel openldap-devel gcc python[VERSION]-devel
+```
+
+Now, install required modules:
+
+```
+pip install -r requirements.txt
+```
+
+Installing is now complete, now you will need to look at the instance/example.config.py file to set up your IDPortal instance
+
+Run app:
+
+```
+flask run
+```
+
+Or run on all interfaces:
+
+```
+flask run --host=0.0.0.0
+```
+
 
 ### Configuration
 

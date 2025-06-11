@@ -4,7 +4,6 @@ class BaseConfig:
     #BASE FLASK CONFIG
     SECRET_KEY              = os.getenv("SECRET_KEY")
     UPLOAD_FOLDER           = os.getenv("UPLOAD_FOLDER")
-    MAX_CONTENT_LENGTH      = os.getenv("MAX_CONTENT_LENGTH")
     
     #LDAP CONFIGURATION
     LDAP_URI                = os.getenv("LDAP_URI")

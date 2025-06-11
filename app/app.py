@@ -10,6 +10,7 @@ def create_app():
     app.config.from_object(f'config.{env}Config')
     app.config.from_pyfile('config.py', silent=True)
     app.config["UPLOAD_FOLDER"] = "static/uploads"
+    app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
     app.register_blueprint(admin_blueprint, url_prefix="/")
     app.register_blueprint(user_blueprint, url_prefix="/")
 

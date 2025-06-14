@@ -2,10 +2,11 @@ from flask import session
 from factories import get_logger
 
 class SubmissionService:
-    def __init__(self, db=None):
+    def __init__(self, db=None, mail=None):
         self.db = db
         self.logger = get_logger("submission_service")
         self.logger.info("SubmissionService initialized")
+        self.mail = mail
 
     def create_submission(self, photo_filepath, license_filepath):
         first_name = session["First Name"]
@@ -31,6 +32,7 @@ class SubmissionService:
         if not result:
             return False
         self.logger.info(f"Request id: {request_id} was approved.")
+        self.mail.send_approved_email(request_id)
         return True
     
     def reject_request(self, request_id, comments) -> bool:
@@ -39,4 +41,5 @@ class SubmissionService:
             return False 
         self.logger.info(f"Request id: {request_id} was rejected.")
         self.logger.info(f"Rejection comments for request id {request_id}: [{comments}]")
+        self.mail.send_rejection_email(request_id, comments)
         return True

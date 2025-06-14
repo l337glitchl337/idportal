@@ -17,8 +17,10 @@ class BaseConfig:
     #Branding, title for the website and logo
     SITE_TITLE              = os.getenv("SITE_TITLE")
     LOGO                    = os.getenv("LOGO")
+    USER_LOGIN_URL          = os.getenv("USER_LOGIN_URL")
     FORGOT_PASSWORD_URL     = os.getenv("FORGOT_PASSWORD_URL")
     REVIEW_REQUEST_URL      = os.getenv("REVIEW_REQUEST_URL")
+    ADMIN_URL               = os.getenv("ADMIN_URL")
     COMPANY_NAME            = os.getenv("COMPANY_NAME")
     COMPANY_ADDRESS         = os.getenv("COMPANY_ADDRESS")
     COMPANY_STATE_ZIP       = os.getenv("COMPANY_STATE_ZIP")
@@ -36,11 +38,11 @@ class BaseConfig:
     MAIL_DEFAULT_RECIP      = os.getenv("MAIL_DEFAULT_RECIP")
 
     #Postgres config
-    PG_DBNAME               = os.getenv("PG_DBNAME")
-    PG_USER                 = os.getenv("PG_USER")
-    PG_PWD                  = os.getenv("PG_PWD")
-    PG_HOST                 = os.getenv("PG_HOST")
-    PG_PORT                 = os.getenv("PG_PORT")
+    POSTGRES_DB                   = os.getenv("POSTGRES_DBNAME")
+    POSTGRES_USER                 = os.getenv("POSTGRES_USER")
+    POSTGRES_PASSWORD             = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_HOST                 = os.getenv("POSTGRES_HOST")
+    POSTGRES_PORT                 = os.getenv("POSTGRES_PORT")
 
 
 class DevelopmentConfig(BaseConfig):

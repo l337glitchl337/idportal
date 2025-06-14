@@ -5,11 +5,11 @@ from psycopg2.extras import RealDictCursor
 class Database:
     def __init__(self, app=None):
         self.db_params = {
-            "dbname" : app.config["PG_DBNAME"],
-            "user" : app.config["PG_USER"],
-            "password" : app.config["PG_PWD"],
-            "host" : app.config["PG_HOST"],
-            "port" : app.config["PG_PORT"]
+            "dbname" : app.config["POSTGRES_DB"],
+            "user" : app.config["POSTGRES_USER"],
+            "password" : app.config["POSTGRES_PASSWORD"],
+            "host" : app.config["POSTGRES_HOST"],
+            "port" : app.config["POSTGRES_PORT"]
         }
         self.logger = get_logger("db_utils")
         self.logger.info("Database initialized.")

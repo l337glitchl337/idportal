@@ -104,3 +104,45 @@ class EmailService:
             return False
         self.logger.info(f"Succesfully sent forgot password email to {kwargs}")
         return True
+    
+    def send_approved_email(self, request_id) -> bool:
+        row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
+        if not row:
+            self.logging.error(f"Error sending approved email for request: {request_id}, row not found in db.")
+            return False
+        
+        name = row[0]
+        email = row[1]
+
+        html_body = render_template("email/approved_submission.html", student_name=name)
+        msg = Message(subject="Your ID submission has been approved!", recipients=[email], html=html_body)
+
+        try:
+            with self.mail.connect() as conn:
+                conn.send(msg)
+        except Exception:
+            self.logger.exception("An email error has occurred!")
+            return False
+        self.logger.info(f"Submission notification succesfully sent to {email}")
+        return True
+    
+    def send_rejection_email(self, request_id, comments):
+        row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
+        if not row:
+            self.logging.error(f"Error sending reject email for request: {request_id}, row not found in db.")
+            return False
+        
+        name = row[0]
+        email = row[1]
+
+        html_body = render_template("email/reject_submission.html", student_name=name, REJECTION_COMMENTS=comments)
+        msg = Message(subject="Your ID submission has been rejected!", recipients=[email], html=html_body)
+
+        try:
+            with self.mail.connect() as conn:
+                conn.send(msg)
+        except Exception:
+            self.logger.exception("An email error has occurred!")
+            return False
+        self.logger.info(f"Submission notification succesfully sent to {email}")
+        return True

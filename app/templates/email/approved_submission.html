@@ -23,23 +23,15 @@
     </tr>
     <tr>
       <td class="content">
-        <h1>Hello {{ first_name }},</h1>
-        <p>You have been given access to the IDPortal admin panel!</p>
-        <p>You can log in with the following information:</p>
-        <p><b>Username: {{ username }}</b></p>
-        <p><b>Password: {{ password }}</b></p>
-        <p style="color: red;">You will be required to change you password upon login.</p>
-        <p style="text-align:center;">
-          <a href="{{ REVIEW_REQUEST_URL }}" class="btn">Log Into Portal</a>
-        </p>
-        <p>If the button above doesn’t work, copy and paste this link into your browser:</p>
-        <p><a href="{{ REVIEW_REQUEST_URL }}">{{ REVIEW_REQUEST_URL }}</a></p>
-        <p>Thank you,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
+        <h1>Hello {{ student_name }},</h1>
+        <p>Your ID submission has been approved and is currently being printed!</p>
+        <p>For more information please call <a href="tel:{{ COMPANY_PHONE }}">{{ COMPANY_PHONE }}</a></p>
+        <p>Best regards,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
       </td>
     </tr>
     <tr>
       <td class="footer">
-        © {{ COMPANY_CURRENT_YEAR }} {{ COMPANY_NAME }} • {{ COMPANY_ADDRESS }} • {{ COMPANY_STATE_ZIP }} • {{ COMPANY_PHONE}}
+        © {{ COMPANY_CURRENT_YEAR }} {{ COMPANY_NAME }} • {{ COMPANY_ADDRESS }} • {{ COMPANY_STATE_ZIP }} • {{ COMPANY_PHONE }}
       </td>
     </tr>
   </table>

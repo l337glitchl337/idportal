@@ -23,18 +23,15 @@
     </tr>
     <tr>
       <td class="content">
-        <h1>Hello {{ first_name }},</h1>
-        <p>You have been given access to the IDPortal admin panel!</p>
-        <p>You can log in with the following information:</p>
-        <p><b>Username: {{ username }}</b></p>
-        <p><b>Password: {{ password }}</b></p>
-        <p style="color: red;">You will be required to change you password upon login.</p>
+        <h1>Hello {{ student_name }},</h1>
+        <p>We regret to inform you that your most recent submission for an ID was reject.</p>
+        <p>Rejection comments:</p>
+        <textarea readonly style="resize: none; width: 300px; height: 100px;">{{ REJECTION_COMMENTS }}</textarea>
+        <p>To submit a new request click the button below:</p>
         <p style="text-align:center;">
-          <a href="{{ REVIEW_REQUEST_URL }}" class="btn">Log Into Portal</a>
+            <a href="{{ USER_LOGIN_URL }}" class="btn">Submit New Request</a>
         </p>
-        <p>If the button above doesn’t work, copy and paste this link into your browser:</p>
-        <p><a href="{{ REVIEW_REQUEST_URL }}">{{ REVIEW_REQUEST_URL }}</a></p>
-        <p>Thank you,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
+        <p>Best regards,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
       </td>
     </tr>
     <tr>

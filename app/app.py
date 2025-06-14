@@ -26,7 +26,8 @@ def create_app():
             "COMPANY_CURRENT_YEAR" : app.config["COMPANY_CURRENT_YEAR"],
             "COMPANY_EMAIL_SIGNATURE" : app.config["COMPANY_EMAIL_SIGNATURE"],
             "FORGOT_PASSWORD_URL" : app.config["FORGOT_PASSWORD_URL"],
-            "REVIEW_REQUEST_URL" : app.config["REVIEW_REQUEST_URL"]
+            "REVIEW_REQUEST_URL" : app.config["REVIEW_REQUEST_URL"],
+            "USER_LOGIN_URL" : app.config["USER_LOGIN_URL"]
         }
     app.json.sort_keys = False
     app.db = Database(app)
@@ -34,7 +35,7 @@ def create_app():
     app.auth_service = AuthService(app.db)
     app.ldap_service = LDAPService(app.auth_service, app)
     app.email_service = EmailService(app.db, app)
-    app.submission_service = SubmissionService(app.db)
+    app.submission_service = SubmissionService(app.db, app.email_service)
     return app
 
 app = create_app()

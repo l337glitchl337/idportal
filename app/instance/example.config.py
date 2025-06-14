@@ -44,7 +44,7 @@ COMPANY_EMAIL_SIGNATURE = "Demo Company ID Portal Team"
 
 MAIL_SERVER             = "mx.example.com" 
 MAIL_PORT               = "25" 
-MAIL_USE_TLS            = False
+MAIL_USE_TLS            = "False"
 MAIL_USERNAME           = "admin@example.com" 
 MAIL_PASSWORD           = "your-email-password" 
 MAIL_DEFAULT_SENDER     = ("IDPortal Admin" , "no-reply-idportal@example.com")

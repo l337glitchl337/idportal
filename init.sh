@@ -9,6 +9,7 @@ echo "POSTGRES_DB=idportal" >> .env
 echo "POSTGRES_USER=idportal" >> .env
 echo "POSTGRES_PORT=5432" >> .env
 echo "POSTGRES_HOST=db" >> .env
+echo "LOGO=portal_logo.png" >> .env
 
 echo "Environment file created"
 echo "------------------------"

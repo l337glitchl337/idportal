@@ -16,26 +16,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
---
--- Name: idportal; Type: DATABASE; Schema: -; Owner: postgres
---
-
-
-ALTER DATABASE idportal OWNER TO idportal;
-
-\connect idportal
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -44,7 +24,6 @@ SET default_table_access_method = heap;
 -- Name: admin_forgot_password; Type: TABLE; Schema: public; Owner: postgres
 --
 
-begin;
 CREATE TABLE public.admin_forgot_password (
     id integer NOT NULL,
     expire_after timestamp with time zone DEFAULT (now() + '00:30:00'::interval),
@@ -53,7 +32,7 @@ CREATE TABLE public.admin_forgot_password (
 );
 
 
-ALTER TABLE public.admin_forgot_password OWNER TO idportal;
+ALTER TABLE public.admin_forgot_password OWNER TO postgres;
 
 --
 -- Name: admin_forgot_password_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -68,7 +47,7 @@ CREATE SEQUENCE public.admin_forgot_password_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.admin_forgot_password_id_seq OWNER TO idportal;
+ALTER SEQUENCE public.admin_forgot_password_id_seq OWNER TO postgres;
 
 --
 -- Name: admin_forgot_password_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -94,7 +73,7 @@ CREATE TABLE public.admins (
 );
 
 
-ALTER TABLE public.admins OWNER TO idportal;
+ALTER TABLE public.admins OWNER TO postgres;
 
 --
 -- Name: admins_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -109,13 +88,14 @@ CREATE SEQUENCE public.admins_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.admins_id_seq OWNER TO idportal;
+ALTER SEQUENCE public.admins_id_seq OWNER TO postgres;
 
 --
 -- Name: admins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.admins_id_seq OWNED BY public.admins.id;
+
 
 --
 -- Name: bfa; Type: TABLE; Schema: public; Owner: postgres
@@ -130,7 +110,7 @@ CREATE TABLE public.bfa (
 );
 
 
-ALTER TABLE public.bfa OWNER TO idportal;
+ALTER TABLE public.bfa OWNER TO postgres;
 
 --
 -- Name: bfa_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -145,7 +125,7 @@ CREATE SEQUENCE public.bfa_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.bfa_id_seq OWNER TO idportal;
+ALTER SEQUENCE public.bfa_id_seq OWNER TO postgres;
 
 --
 -- Name: bfa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -174,7 +154,7 @@ CREATE TABLE public.submissions (
 );
 
 
-ALTER TABLE public.submissions OWNER TO idportal;
+ALTER TABLE public.submissions OWNER TO postgres;
 
 --
 -- Name: submissions_request_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -189,7 +169,7 @@ CREATE SEQUENCE public.submissions_request_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.submissions_request_id_seq OWNER TO idportal;
+ALTER SEQUENCE public.submissions_request_id_seq OWNER TO postgres;
 
 --
 -- Name: submissions_request_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -235,11 +215,35 @@ ALTER TABLE ONLY public.admin_forgot_password
 
 
 --
+-- Name: admins admins_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admins
+    ADD CONSTRAINT admins_email_key UNIQUE (email);
+
+
+--
 -- Name: admins admins_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.admins
     ADD CONSTRAINT admins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: admins admins_username_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.admins
+    ADD CONSTRAINT admins_username_key UNIQUE (username);
+
+
+--
+-- Name: bfa bfa_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bfa
+    ADD CONSTRAINT bfa_email_key UNIQUE (email);
 
 
 --
@@ -259,6 +263,22 @@ ALTER TABLE ONLY public.admins
 
 
 --
+-- Name: submissions submissions_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_email_key UNIQUE (email);
+
+
+--
+-- Name: submissions submissions_id_number_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_id_number_key UNIQUE (id_number);
+
+
+--
 -- Name: submissions submissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -275,18 +295,60 @@ ALTER TABLE ONLY public.admins
 
 
 --
+-- Name: admins_email_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX admins_email_idx ON public.admins USING btree (email);
+
+
+--
+-- Name: admins_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX admins_id_idx ON public.admins USING btree (id);
+
+
+--
+-- Name: admins_username_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX admins_username_idx ON public.admins USING btree (username);
+
+
+--
+-- Name: bfa_email_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX bfa_email_idx ON public.bfa USING btree (email);
+
+
+--
+-- Name: submissions_email_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX submissions_email_idx ON public.submissions USING btree (email);
+
+
+--
+-- Name: submissions_id_number_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX submissions_id_number_idx ON public.submissions USING btree (id_number);
+
+
+--
+-- Name: submissions_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX submissions_status_idx ON public.submissions USING btree (status);
+
+
+--
 -- Name: admin_forgot_password admin_forgot_password_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.admin_forgot_password
     ADD CONSTRAINT admin_forgot_password_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.admins(id);
-
-
---
--- Name: DATABASE idportal; Type: ACL; Schema: -; Owner: postgres
---
-
-GRANT CONNECT ON DATABASE idportal TO idportal;
 
 
 --
@@ -356,14 +418,14 @@ GRANT USAGE ON SEQUENCE public.submissions_request_id_seq TO idportal;
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
---ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES TO idportal;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES TO idportal;
 
 
 --
 -- PostgreSQL database dump complete
 --
-commit;
-
-begin;
+--
+-- Add admin account
+--
 INSERT INTO public.admins (first_name, last_name, username, password, email, status, on_login, role) VALUES ('Admin', 'Account', 'admin', '$2b$12$RrvdG7OilbQVI7WJaNHMKOWzZfxgsuCAuwyA9XkwqKeoI1UeOiX9e', 'admin@email.com', 1, 0, 'super');
-commit;
+

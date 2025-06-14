@@ -32,7 +32,7 @@ CREATE TABLE public.admin_forgot_password (
 );
 
 
-ALTER TABLE public.admin_forgot_password OWNER TO postgres;
+ALTER TABLE public.admin_forgot_password owner to idportal;
 
 --
 -- Name: admin_forgot_password_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -47,7 +47,7 @@ CREATE SEQUENCE public.admin_forgot_password_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.admin_forgot_password_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.admin_forgot_password_id_seq owner to idportal;
 
 --
 -- Name: admin_forgot_password_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -73,7 +73,7 @@ CREATE TABLE public.admins (
 );
 
 
-ALTER TABLE public.admins OWNER TO postgres;
+ALTER TABLE public.admins owner to idportal;
 
 --
 -- Name: admins_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -88,7 +88,7 @@ CREATE SEQUENCE public.admins_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.admins_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.admins_id_seq owner to idportal;
 
 --
 -- Name: admins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -110,7 +110,7 @@ CREATE TABLE public.bfa (
 );
 
 
-ALTER TABLE public.bfa OWNER TO postgres;
+ALTER TABLE public.bfa owner to idportal;
 
 --
 -- Name: bfa_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -125,7 +125,7 @@ CREATE SEQUENCE public.bfa_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.bfa_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.bfa_id_seq owner to idportal;
 
 --
 -- Name: bfa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -154,7 +154,7 @@ CREATE TABLE public.submissions (
 );
 
 
-ALTER TABLE public.submissions OWNER TO postgres;
+ALTER TABLE public.submissions owner to idportal;
 
 --
 -- Name: submissions_request_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -169,7 +169,7 @@ CREATE SEQUENCE public.submissions_request_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.submissions_request_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.submissions_request_id_seq owner to idportal;
 
 --
 -- Name: submissions_request_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres

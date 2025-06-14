@@ -1,4 +1,4 @@
-from flask import session
+from flask import session, flash
 from factories import get_logger
 
 class SubmissionService:
@@ -14,6 +14,7 @@ class SubmissionService:
         id_number = session["ID Number"]
         location = session["Location"]
         email = session["Email"]
+
         result = self.db.execute_query("""insert into submissions 
                                        (first_name, last_name, email, id_number, 
                                        location, photo_filepath, license_filepath) 

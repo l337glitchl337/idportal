@@ -33,7 +33,7 @@ def create_app():
     app.db = Database(app)
     app.admin_service = AdminService(app.db)
     app.auth_service = AuthService(app.db)
-    app.ldap_service = LDAPService(app.auth_service, app)
+    app.ldap_service = LDAPService(app.auth_service, app, app.db)
     app.email_service = EmailService(app.db, app)
     app.submission_service = SubmissionService(app.db, app.email_service)
     return app

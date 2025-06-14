@@ -16,13 +16,17 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        attrs, result = ldap_service.auth_user(email, password)
+        message, attrs, result = ldap_service.auth_user(email, password)
 
         if result:
             auth_service.set_session_attrs(attrs)
             return redirect(url_for('user.landing'))
         else:
-            flash("Error: Please check email/password", "danger")
+            if not message:
+                flash("Error: Please check email/password", "danger")
+            else:
+                flash(message, "info")
+        
             return redirect(url_for("user.home"))
 
 @user_blueprint.route("/landing", methods=["GET"])

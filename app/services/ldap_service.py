@@ -66,8 +66,10 @@ class LDAPService:
         
     def check_user_submissions(self, email):
         count = self.db.execute_query("select count(*) from submissions where email=%s and status in ('N','A')", (email,), fetch_one=True)
+        print(count[0])
         if count[0] >= 1:
             self.logger.warning(f"Not accepting submission from {email}")
             self.logger.warning(f"{email} has a pending or approved submission in the db.")
             return False
+        return True
         

@@ -1,5 +1,2 @@
 .env
 old.init.sql
-docker/nginx/certs/**
-!docker/nginx/certs
-!docker/nginx/.gitignore

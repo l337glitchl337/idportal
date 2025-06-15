@@ -32,7 +32,7 @@ CREATE TABLE public.admin_forgot_password (
 );
 
 
-ALTER TABLE public.admin_forgot_password owner to idportal;
+ALTER TABLE public.admin_forgot_password OWNER TO idportal;
 
 --
 -- Name: admin_forgot_password_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -47,7 +47,7 @@ CREATE SEQUENCE public.admin_forgot_password_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.admin_forgot_password_id_seq owner to idportal;
+ALTER SEQUENCE public.admin_forgot_password_id_seq OWNER TO idportal;
 
 --
 -- Name: admin_forgot_password_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -73,7 +73,7 @@ CREATE TABLE public.admins (
 );
 
 
-ALTER TABLE public.admins owner to idportal;
+ALTER TABLE public.admins OWNER TO idportal;
 
 --
 -- Name: admins_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -88,7 +88,7 @@ CREATE SEQUENCE public.admins_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.admins_id_seq owner to idportal;
+ALTER SEQUENCE public.admins_id_seq OWNER TO idportal;
 
 --
 -- Name: admins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -110,7 +110,7 @@ CREATE TABLE public.bfa (
 );
 
 
-ALTER TABLE public.bfa owner to idportal;
+ALTER TABLE public.bfa OWNER TO idportal;
 
 --
 -- Name: bfa_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -125,7 +125,7 @@ CREATE SEQUENCE public.bfa_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.bfa_id_seq owner to idportal;
+ALTER SEQUENCE public.bfa_id_seq OWNER TO idportal;
 
 --
 -- Name: bfa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -150,11 +150,12 @@ CREATE TABLE public.submissions (
     photo_filepath text,
     license_filepath text,
     comments character varying(250),
-    email text
+    email text,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, ((((((((((COALESCE(first_name, ''::text) || ' '::text) || COALESCE(last_name, ''::text)) || ' '::text) || COALESCE(id_number, ''::text)) || ' '::text) || COALESCE(email, ''::text)) || ' '::text) || (COALESCE(location, ''::character varying))::text) || ' '::text) || (COALESCE(comments, ''::character varying))::text))) STORED
 );
 
 
-ALTER TABLE public.submissions owner to idportal;
+ALTER TABLE public.submissions OWNER TO idportal;
 
 --
 -- Name: submissions_request_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -169,7 +170,7 @@ CREATE SEQUENCE public.submissions_request_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.submissions_request_id_seq owner to idportal;
+ALTER SEQUENCE public.submissions_request_id_seq OWNER TO idportal;
 
 --
 -- Name: submissions_request_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -337,6 +338,13 @@ CREATE INDEX submissions_id_number_idx ON public.submissions USING btree (id_num
 
 
 --
+-- Name: submissions_search_vector_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX submissions_search_vector_idx ON public.submissions USING gin (search_vector);
+
+
+--
 -- Name: submissions_status_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -418,14 +426,15 @@ GRANT USAGE ON SEQUENCE public.submissions_request_id_seq TO idportal;
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE idportal IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES TO idportal;
+-- ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES TO idportal;
 
 
 --
 -- PostgreSQL database dump complete
 --
+
 --
--- Add admin account
+-- Create default admin account
 --
 INSERT INTO public.admins (first_name, last_name, username, password, email, status, on_login, role) VALUES ('Admin', 'Account', 'admin', '$2b$12$RrvdG7OilbQVI7WJaNHMKOWzZfxgsuCAuwyA9XkwqKeoI1UeOiX9e', 'admin@email.com', 1, 0, 'super');
 

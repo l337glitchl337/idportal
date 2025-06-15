@@ -1,0 +1,16 @@
+.env
+old.init.sql
+static/uploads/**
+!static/uploads
+!static/uploads/.gitignore
+*.bak
+venv/
+__pycache__/
+instance/config.py
+logs/**
+!logs/
+!logs/.gitignore
+init_db/
+docker/nginx/certs/**
+!docker/nginx/certs
+!docker/nginx/.gitignore

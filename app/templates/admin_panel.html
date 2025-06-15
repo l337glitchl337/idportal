@@ -29,6 +29,9 @@
       <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}" href="{{ url_for('admin.admin_panel', active_tab='profile') }}">My Profile</a>
     </li>
     <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'search' %}active{% endif %}" href="{{ url_for('admin.admin_panel', active_tab='search') }}">Search</a>
+    </li>
+    <li class="nav-item">
       <a href="/logout" class="btn btn-danger" role="button">Log out</a>
     </li>
   </ul>
@@ -249,8 +252,62 @@
         </form>
       </div>
     </div>
+
+
+
+     <div class="tab-pane fade {% if active_tab == 'search' %}show active{% endif %}" id="search">
+        <h4 class="mb-3">Search submissions</h4>
+        <form class="d-flex" role="search" method="POST" action="{{ url_for('admin.search_submissions')}}">
+          <input class="form-control me-2" type="search" placeholder="Search for user submissions" aria-label="Search" name="search_term">
+          <button class="btn btn-success" type="submit">Search</button>
+        </form>
+        {% if search_results %}
+         <table class="table table-dark table-hover">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>ID Number</th>
+            <th>Location</th>
+            <th>Time</th>
+            <th>Photo</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in search_results %}
+          <tr>
+            <td>{{ result.request_id }}</td>
+            <td>{{ result.first_name}} {{ result.last_name }}</td>
+            <td>{{ result.email }}</td>
+            <td>{{ result.id_number }}</td>
+            <td>{{ result.location }}</td>
+            <td>{{ result.timestamp_inserted }}</td>
+            <td>
+              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
+                data-photo-user="{{ url_for('static', filename='uploads/' + result.photo_filepath) }}"
+                data-photo-license="{{ url_for('static', filename='uploads/' + result.license_filepath) }}">
+                View Photos
+              </button>
+            </td>
+            <td>
+              <button class="deleteSubmissionBtn btn btn-sm btn-danger" data-request-id="{{ result.request_id }}" data-bs-toggle="modal" data-bs-target="#deleteSubmissionModal" data-action="delete" data-submission="{{ result.first_name }} {{ result.last_name}}">Delete</button>
+            </td> 
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+
+
+    
   </div>
 </div>
+
+
+
 
 <!-- Include modals -->
 {{ macros.modal('resultModal', 'Result', 'resultModalBody', '<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>'|safe) }}
@@ -261,6 +318,7 @@
 {{ macros.modal('createAdminModal', 'Create Admin Account', 'createAdminModalBody') }}
 {{ macros.modal('editAdminModal', 'Edit Admin Account', 'editAdminModalBody') }}
 {{ macros.modal('deleteAdminModal', 'Delete Admin Account', 'deleteAdminModalBody') }}
+{{ macros.modal('deleteSubmissionModal', "Delete submission", "deleteSubmissionModalBody", '<button type="button" class="btn btn-danger" id="deleteConfirmBtn">Confirm</button>') }}
 
 {% endblock %}
 
@@ -269,6 +327,7 @@
   const batchEditUrl = "{{ url_for('admin.batch_edit') }}"; // Backend endpoint for batch editing
   const approveUrl = "{{ url_for('admin.approve_submission') }}"; // Backend endpoint for approving submissions
   const rejectUrl = "{{ url_for('admin.reject_submission') }}"; // Backend endpoint for rejecting submissions
+  const deleteUrl = "{{ url_for('admin.delete_submission') }}"
   
 </script>
 <script src="{{ url_for('static', filename='js/admin_panel.js') }}"></script>

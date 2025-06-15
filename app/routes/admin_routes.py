@@ -27,10 +27,18 @@ def admin():
 @DecoratorHelper.check_first_login
 def admin_panel():
     admin_service = current_app.admin_service
+    submission_service = current_app.submission_service
     page = request.args.get("page", 1, type=int)
-
     active_tab = request.args.get("active_tab", "pending") 
     current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"], "user_id": session["user_id"]}
+
+    if request.args.get("search_term"):
+        results = submission_service.search(request.args.get("search_term"))
+        if results:
+            return render_template("admin_panel.html", active_tab=active_tab, **results, current_user=current_user)
+        else:
+            flash("No submissions found for that search term!", "info")
+            return redirect(url_for("admin.admin_panel", active_tab="search"))
     data = admin_service.populate_admin_panel(page, active_tab=active_tab)
     return render_template("admin_panel.html", **data, active_tab=active_tab, current_user=current_user, current_page=page)
 
@@ -226,3 +234,26 @@ def delete_admin_account():
         return {"success": True, "message": "Admin account deleted successfully!"}
     else:
         return {"success": False, "message": "Failed to delete admin account. Please check logs for more details"}
+    
+@admin_blueprint.route("/search_submissions", methods=["POST"])
+@DecoratorHelper.check_admin_login
+@DecoratorHelper.check_first_login
+def search_submissions():
+    if request.method == "POST":
+        search_term = request.form.get("search_term")
+        return redirect(url_for("admin.admin_panel", active_tab="search", search_term=search_term))
+
+@admin_blueprint.route("/delete_submission", methods=["POST"])
+@DecoratorHelper.check_admin_login
+@DecoratorHelper.check_first_login
+def delete_submission():
+    if request.method == "POST":
+        request_id = request.form.get("request_id")
+        submission_service = current_app.submission_service
+        if submission_service.delete(request_id):
+            return {"success": True, "message": f"Deleted submission with id: {request_id} succesfully", "errors": None}
+        else:
+            return {"sucess": False, "message": f"Failed to delete submission id: {request_id}", "errors": "err"}
+        
+        
+

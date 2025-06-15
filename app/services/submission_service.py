@@ -44,3 +44,15 @@ class SubmissionService:
         self.logger.info(f"Rejection comments for request id {request_id}: [{comments}]")
         self.mail.send_rejection_email(request_id, comments)
         return True
+    
+    def search(self, search_term) -> dict:
+        rows = self.db.execute_query("SELECT * FROM submissions WHERE search_vector @@ plainto_tsquery(%s);", (search_term,), fetch_all=True, dict_cursor=True)
+        results = [row for row in rows]
+        search_results = {"search_results":results}
+        return search_results
+    
+    def delete(self, request_id) -> bool:
+        r = self.db.execute_query("delete from submissions where request_id=%s", (request_id,),)
+        if not r:
+            return False
+        return True

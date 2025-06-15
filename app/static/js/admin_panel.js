@@ -490,3 +490,55 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 });
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  const deleteSubmissionModal = document.getElementById('deleteSubmissionModal');
+  const deleteSubmissionModalBody = document.getElementById('deleteSubmissionModalBody');
+
+  document.querySelectorAll('.deleteSubmissionBtn[data-request-id]').forEach(button => {
+      button.addEventListener('click', function () {
+        const requestId = this.getAttribute('data-request-id'); // Get the request ID from the button
+        console.log(requestId);
+
+        
+        const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+        let name = this.getAttribute('data-submission');
+
+        deleteSubmissionModalBody.innerHTML = `
+          <form id="deleteSubmission">
+            <div class="mb-3">
+              <p>Are you sure you would like to delete this submission for <b>${name}</b>?</p>
+            </div>
+          </form>
+        `;
+
+        // Show the modal
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(deleteSubmissionModal);
+        modalInstance.show();
+
+        // Handle confirmation
+        deleteConfirmBtn.onclick = function () {
+
+          const formData = new FormData();
+          formData.append('request_id', requestId);
+
+          fetch(deleteUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+          })
+            .then(response => response.json())
+            .then(data => {
+              showResultModal(data.success, data.message, data.errors || {});
+              modalInstance.hide(); // Close the modal after submission
+            })
+            .catch(() => {
+              showResultModal(false, 'An error occurred while deleting the submission.');
+              modalInstance.hide(); // Close the modal after submission
+            });
+        };
+      });
+    });
+  });

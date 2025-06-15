@@ -47,6 +47,8 @@ class SubmissionService:
     
     def search(self, search_term) -> dict:
         rows = self.db.execute_query("SELECT * FROM submissions WHERE search_vector @@ plainto_tsquery(%s);", (search_term,), fetch_all=True, dict_cursor=True)
+        if not rows:
+            return None
         results = [row for row in rows]
         search_results = {"search_results":results}
         return search_results

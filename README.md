@@ -104,6 +104,9 @@ You can now log in with your organization's credentials and begin submitting or 
 - `.env` — Stores secrets and environment variables (e.g., DB credentials, Flask secret key)
 - `docker/nginx/certs/` — Holds SSL certificates (self-signed or from a certificate authority)
 - `/var/lib/docker/volumes/idportal_config/_data/config.py` — App-specific configuration file
+- `/var/lib/docker/volumes/idportal_logs/_data` - Holds app-specific logs
+- `/var/lib/docker/volumes/idportal_pgdata/_data` - Holds postgres database files
+- `/var/lib/docker/volumes/idportal_uploads/_data` - Holds uploaded photos
 
 ## 📄 License
 

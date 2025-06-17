@@ -96,6 +96,16 @@ Open your browser and go to:
 ```
 https://localhost
 ```
+or
+```
+https://localhost/admin
+```
+A default admin account is already created for you to log in:
+
+```
+Username: Admin
+Password: PassWord1#
+```
 
 You can now log in with your organization's credentials and begin submitting or approving ID requests.
 

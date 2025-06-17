@@ -1,117 +1,114 @@
-# ID Portal
+# IDPortal
 
-ID Portal is a web-based tool designed for organizations to accept and manage ID submission requests efficiently and securely.
+**IDPortal** is a web-based platform for submitting photo ID requests in organizational settings such as schools or workplaces. Users can log in with their organization's credentials (LDAP/Active Directory) and submit ID requests without needing to visit a physical office. IT administrators can review, approve, or deny requests via a secure admin panel, and use the submitted photos to print ID cards based on a template.
 
-## Features
+## 🛠 Tech Stack
 
-- Accepts ID submissions from users
-- Admin dashboard for managing and reviewing submissions
-- User authentication and lookup via LDAP
-- Admin authentication and submission storage using PostgreSQL
-
-## Deployment Notes
-
-A Docker release is planned for easy deployment in the future.
-
-## Prerequisites
-```
-Python >= 3.10
-Active LDAP/Active Directory
-Linux server (instructions will assume you are usinfg Fefora/RHEL/CentOS)
-````
-
-Required packages:
-
-```
-libpq-devel 
-openldap-devel 
-gcc 
-python3.12-devel
-```
-
-## Basic installation
-
-**Note this basic installiation is just for testing and is not production ready**
-
-Download repo:
-```gh repo clone l337glitchl337/idportal```
-
-Create a venv (optional):
-
-```
-cd idportal-main
-python -m venv venv
-```
-
-Activate venv:
-
-```
-. venv/bin/activate
-```
-
-Install depenencies:
-
-```
-sudo dnf install libpq-devel openldap-devel gcc python[VERSION]-devel
-```
-
-Now, install required modules:
-
-```
-pip install -r requirements.txt
-```
-
-Installing is now complete, now you will need to look at the instance/example.config.py file to set up your IDPortal instance
-
-Run app:
-
-```
-flask run
-```
-
-Or run on all interfaces:
-
-```
-flask run --host=0.0.0.0
-```
-
-
-### Configuration
-
-Application configuration files are located in the `instance/` directory. Refer to `example.config.py` for an example configuration setup.
-## Tech Stack
-
-- **Backend:** Python, Flask
+- **Backend:** Python (Flask)
+- **Frontend:** JavaScript, Bootstrap CSS
 - **Database:** PostgreSQL
-- **Authentication:** LDAP (users), PostgreSQL (admins)
-- **Frontend:** HTML, Bootstrap CSS, Vanilla JavaScript, Bootstrap JS
+- **Authentication:** LDAP / Active Directory
+- **Containerization:** Docker & Docker Compose
+- **Web Server:** Nginx (with optional SSL)
 
-## Getting Started
+## 📦 Installation Instructions
 
-1. **Clone the repository**
-    ```bash
-    git clone https://github.com/your-org/idportal.git
-    cd idportal
-    ```
+Follow these steps to install and run IDPortal:
 
-2. **Install dependencies**
-    ```bash
-    pip install -r requirements.txt
-    ```
+### 1. Install Docker and Docker Compose
 
-3. **Configure environment variables**
-    - Set up PostgreSQL connection details
-    - Configure LDAP server settings
+Install Docker and Docker Compose by following the official guide:  
+https://docs.docker.com/engine/install/
 
-4. **Run the application**
-    ```bash
-    flask run
-    ```
+### 2. Clone the Repository
 
-## License
+```bash
+git clone https://github.com/yourusername/idportal.git
+cd idportal
+```
 
-This project is licensed under the MIT License.
+### 3. Run Initialization Script
 
-## Contributing
+Run the included setup script to generate environment variables and configure SSL:
 
-Contributions are welcome! Please open issues or submit pull requests.
+```bash
+./init.sh
+```
+
+You will see output similar to:
+
+```
+Environment file created
+------------------------
+SECRET_KEY=randomkey
+POSTGRES_PASSWORD=randompass
+POSTGRES_DB=idportal
+POSTGRES_USER=idportal
+POSTGRES_PORT=5432
+POSTGRES_HOST=db
+LOGO=portal_logo.png
+
+Setting up nginx ssl config..
+docker/nginx/certs already exists, continuing.
+Would you like to create a self signed cert for testing?[y\n]:> y
+... [cert generation output] ...
+Done
+```
+
+You can optionally create a self-signed certificate for testing by entering `y`.  
+After testing, you can replace the generated cert and key in `docker/nginx/certs` with CA-signed versions for production.
+
+**Note:** You may edit the `.env` file after it is generated to change passwords, usernames, or logo filename.
+
+### 4. Build Docker Containers
+
+Run the following command to build the Docker images and bring up the services:
+
+```bash
+docker compose up --build
+```
+
+Once the build is complete, press `Ctrl+C` to stop the containers.
+
+### 5. Create Application Config File
+
+Create the app config file at the following path inside the Docker volume:
+
+```bash
+sudo nano /var/lib/docker/volumes/idportal_config/_data/config.py
+```
+
+Refer to `example.config.py` in the project root to structure your configuration.  
+This includes LDAP connection settings and application-specific options.
+
+### 6. Start the Application
+
+Now that the config file is in place, start the containers in detached mode:
+
+```bash
+docker compose up -d
+```
+
+### 7. Access the Portal
+
+Open your browser and go to:
+
+```
+https://localhost
+```
+
+You can now log in with your organization's credentials and begin submitting or approving ID requests.
+
+## 🔐 Configuration Notes
+
+- `.env` — Stores secrets and environment variables (e.g., DB credentials, Flask secret key)
+- `docker/nginx/certs/` — Holds SSL certificates (self-signed or from a certificate authority)
+- `/var/lib/docker/volumes/idportal_config/_data/config.py` — App-specific configuration file
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions, suggestions, and pull requests are welcome! Please submit issues or PRs to help improve IDPortal.

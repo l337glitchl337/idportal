@@ -99,7 +99,7 @@ https://localhost
 
 You can now log in with your organization's credentials and begin submitting or approving ID requests.
 
-## 🔐 Configuration Notes
+## 🔐 Additional Notes
 
 - `.env` — Stores secrets and environment variables (e.g., DB credentials, Flask secret key)
 - `docker/nginx/certs/` — Holds SSL certificates (self-signed or from a certificate authority)

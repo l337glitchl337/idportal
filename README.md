@@ -23,7 +23,7 @@ https://docs.docker.com/engine/install/
 ### 2. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/idportal.git
+git clone https://github.com/l337glitchl337/idportal.git
 cd idportal
 ```
 

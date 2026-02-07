@@ -20,16 +20,16 @@ LDAP_USE_TLS            = True
 LDAP_ATTRIBUTES         = '{"First Name":"givenName","Last Name":"sn","ID Number":"title","Location":"o","cn":"cn","Email":"mail"}'
 
 # Branding, title for the website and logo
-
-
-# If you want to use a different logo, place them in static/ and put the change the LOGO key to the filename of your logo.
+# If you want to use a different logo, place them in static/ and change the LOGO key to the filename of your logo.
 SITE_TITLE              = "Demo IDPortal" 
 LOGO                    = "portal_logo.png" 
+
 # The FORGOT_PASSWORD_URL and REVIEW_REQUEST_URL will just be the links that will redirect you back to idportal from emails
 # Only edit the http://localhost portion, leave forgot_password and admin_panel the same or it will not work.
 FORGOT_PASSWORD_URL     = "http://localhost/forgot_password" 
 REVIEW_REQUEST_URL      = "http://localhost/admin_panel" 
 USER_LOGIN_URL          = "http://localhost"
+
 COMPANY_NAME            = "Demo Company" 
 COMPANY_ADDRESS         = "123 Wallaby Way" 
 COMPANY_STATE_ZIP       = "New York, NY 10001" 
@@ -37,15 +37,24 @@ COMPANY_PHONE           = "(123) 456-7890"
 COMPANY_CURRENT_YEAR    = "2025" 
 COMPANY_EMAIL_SIGNATURE = "Demo Company ID Portal Team" 
 
-
 # Email config
 # If you are wanting to use a local relay smtp server without authentication comment out
 # the MAIL_USERNAME and MAIL_PASSWORD lines below
 
 MAIL_SERVER             = "mx.example.com" 
-MAIL_PORT               = "25" 
-MAIL_USE_TLS            = "False"
+MAIL_PORT               = 587
+MAIL_USE_TLS            = True
 MAIL_USERNAME           = "admin@example.com" 
 MAIL_PASSWORD           = "your-email-password" 
-MAIL_DEFAULT_SENDER     = ("IDPortal Admin" , "no-reply-idportal@example.com")
+MAIL_DEFAULT_SENDER     = ("IDPortal Admin", "no-reply-idportal@example.com")
 MAIL_DEFAULT_RECIP      = "idportal-admins@example.com" 
+
+# OAuth2 Settings (optional - only needed if using Microsoft 365 OAuth authentication)
+# Set MAIL_USE_OAUTH to True to enable OAuth2 authentication instead of username/password
+# You'll need to register an application in Azure AD and configure the following:
+MAIL_USE_OAUTH          = False
+
+# Uncomment and configure these if MAIL_USE_OAUTH is True:
+# AZURE_CLIENT_ID       = "your-azure-client-id"
+# AZURE_CLIENT_SECRET   = "your-azure-client-secret"
+# AZURE_TENANT_ID       = "your-azure-tenant-id"

@@ -12,7 +12,7 @@ class BaseConfig:
     LDAP_SEARCH_BASE        = os.getenv("LDAP_SEARCH_BASE")
     LDAP_SEARCH_FILTER      = os.getenv("LDAP_SEARCH_FILTER")
     LDAP_ATTRIBUTES         = os.getenv("LDAP_ATTRIBUTES", "{}")
-    LDAP_USE_TLS            = os.getenv("LDAP_USE_TLS")
+    LDAP_USE_TLS            = os.getenv("LDAP_USE_TLS", "false").lower() == "true"
     
     #Branding, title for the website and logo
     SITE_TITLE              = os.getenv("SITE_TITLE")
@@ -30,21 +30,26 @@ class BaseConfig:
 
     #Email config
     MAIL_SERVER             = os.getenv("MAIL_SERVER")
-    MAIL_PORT               = os.getenv("MAIL_PORT")
-    #MAIL_USE_TLS            = os.getenv("MAIL_USE_TLS")
-    #MAIL_USERNAME           = os.getenv("MAIL_USERNAME")
-    #MAIL_PASSWORD           = os.getenv("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER     = (os.getenv("MAIL_DEFAULT_SENDER"), os.getenv("MAIL_USERNAME"))
+    MAIL_PORT               = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_USE_TLS            = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
+    MAIL_USERNAME           = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD           = os.getenv("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER     = (os.getenv("MAIL_DEFAULT_SENDER_NAME", "IDPortal"), os.getenv("MAIL_USERNAME"))
     MAIL_DEFAULT_RECIP      = os.getenv("MAIL_DEFAULT_RECIP")
 
+    # OAuth2 settings
+    MAIL_USE_OAUTH          = os.getenv('MAIL_USE_OAUTH', 'false').lower() == 'true'
+    AZURE_CLIENT_ID         = os.getenv('AZURE_CLIENT_ID')
+    AZURE_CLIENT_SECRET     = os.getenv('AZURE_CLIENT_SECRET')
+    AZURE_TENANT_ID         = os.getenv('AZURE_TENANT_ID')
+
     #Postgres config
-    POSTGRES_DB                   = os.getenv("POSTGRES_DBNAME")
-    POSTGRES_USER                 = os.getenv("POSTGRES_USER")
-    POSTGRES_PASSWORD             = os.getenv("POSTGRES_PASSWORD")
-    POSTGRES_HOST                 = os.getenv("POSTGRES_HOST")
-    POSTGRES_PORT                 = os.getenv("POSTGRES_PORT")
-
-
+    POSTGRES_DB             = os.getenv("POSTGRES_DBNAME")
+    POSTGRES_USER           = os.getenv("POSTGRES_USER")
+    POSTGRES_PASSWORD       = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_HOST           = os.getenv("POSTGRES_HOST")
+    POSTGRES_PORT           = os.getenv("POSTGRES_PORT")
+    
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
 

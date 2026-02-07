@@ -2,6 +2,12 @@ from flask_mail import Mail, Message
 from flask import render_template, session
 from factories import get_logger
 import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import msal
+import base64
+import os
 
 class EmailService:
     def __init__(self, db=None, app=None):
@@ -10,14 +16,94 @@ class EmailService:
         self.db = db
         self.mail.init_app(app)
         self.logger = get_logger("email_service")
-        self.logger.info("EmailService initialized")
+        
+        # OAuth2 configuration
+        self.use_oauth = app.config.get('MAIL_USE_OAUTH', False)
+        if self.use_oauth:
+            self.client_id = app.config.get('AZURE_CLIENT_ID')
+            self.client_secret = app.config.get('AZURE_CLIENT_SECRET')
+            self.tenant_id = app.config.get('AZURE_TENANT_ID')
+            self.sender_email = app.config.get('MAIL_USERNAME')
+            self.scopes = ["https://outlook.office365.com/.default"]
+            self.logger.info("EmailService initialized with OAuth2")
+        else:
+            self.logger.info("EmailService initialized with legacy authentication")
+
+    def _get_access_token(self):
+        """Acquire OAuth2 access token"""
+        try:
+            authority = f"https://login.microsoftonline.com/{self.tenant_id}"
+            app_msal = msal.ConfidentialClientApplication(
+                self.client_id,
+                authority=authority,
+                client_credential=self.client_secret
+            )
+            
+            result = app_msal.acquire_token_for_client(scopes=self.scopes)
+            
+            if "access_token" in result:
+                return result["access_token"]
+            else:
+                raise Exception(f"Token acquisition failed: {result.get('error_description')}")
+        except Exception as e:
+            self.logger.exception("Failed to acquire OAuth2 token")
+            raise
+
+    def _send_with_oauth(self, recipients, subject, html_body):
+        """Send email using OAuth2 SMTP authentication"""
+        try:
+            access_token = self._get_access_token()
+            
+            msg = MIMEMultipart('alternative')
+            msg['From'] = self.sender_email
+            msg['To'] = ', '.join(recipients) if isinstance(recipients, list) else recipients
+            msg['Subject'] = subject
+            msg.attach(MIMEText(html_body, 'html'))
+            
+            # Connect to Microsoft 365 SMTP
+            server = smtplib.SMTP('smtp.office365.com', 587)
+            server.starttls()
+            
+            # OAuth2 authentication
+            auth_string = f"user={self.sender_email}\x01auth=Bearer {access_token}\x01\x01"
+            auth_b64 = base64.b64encode(auth_string.encode()).decode()
+            server.docmd('AUTH', 'XOAUTH2 ' + auth_b64)
+            
+            server.send_message(msg)
+            server.quit()
+            
+            return True
+        except Exception as e:
+            self.logger.exception("OAuth2 email send failed")
+            raise
+
+    def _send_message(self, msg):
+        """Send a single message using configured method"""
+        if self.use_oauth:
+            return self._send_with_oauth(msg.recipients, msg.subject, msg.html)
+        else:
+            # Legacy flask-mail method
+            with self.mail.connect() as conn:
+                conn.send(msg)
+            return True
+
+    def _send_messages(self, messages):
+        """Send multiple messages using configured method"""
+        if self.use_oauth:
+            for msg in messages:
+                self._send_with_oauth(msg.recipients, msg.subject, msg.html)
+        else:
+            # Legacy flask-mail batch method
+            with self.mail.connect() as conn:
+                for msg in messages:
+                    conn.send(msg)
 
     def send_email_alert(self) -> bool:
         messages = []
         request_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         html_body = render_template('email/admin_email.html',
-                                    subject=f"{session["cn"]} has requested an ID!",
+                                    subject=f"{session['cn']} has requested an ID!",
                                     student_name=session["cn"],
                                     student_id=session["ID Number"],
                                     campus=session["Location"],
@@ -41,14 +127,12 @@ class EmailService:
         messages.append(student_msg)
         
         try:
-            with self.mail.connect() as conn:
-                for msg in messages:
-                    conn.send(msg)
+            self._send_messages(messages)
         except Exception:
             self.logger.exception("An error occurred while trying to send an email alert!")
             return False
         
-        self.logger.info(f"Succesfully sent email alert to: {self.app.config["MAIL_DEFAULT_RECIP"]}, {session["Email"]}")
+        self.logger.info(f"Successfully sent email alert to: {self.app.config['MAIL_DEFAULT_RECIP']}, {session['Email']}")
         return True
     
     def send_welcome_email(self, username, password, first_name, email) -> bool:
@@ -60,12 +144,11 @@ class EmailService:
                     recipients=[email],
                     html=html_body)
         try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
+            self._send_message(msg)
         except Exception:
             self.logger.exception("Error occurred while trying to send the welcome email!")
             return False
-        self.logger.info(f"Succesfully sent welcome email to {email}")
+        self.logger.info(f"Successfully sent welcome email to {email}")
         return True
     
     def send_forgot_password_email(self, **kwargs) -> bool:
@@ -75,7 +158,7 @@ class EmailService:
         else:
             row = self.db.execute_query("select first_name || ' ' || last_name, username, email, id from admins where username=%s", (kwargs["username"],), fetch_one=True)
         if not row:
-            self.logger.error("Error occured while trying to send forgot password email")
+            self.logger.error("Error occurred while trying to send forgot password email")
             self.logger.error(f"Unable to find record for {kwargs}")
             return False
         
@@ -97,18 +180,17 @@ class EmailService:
                         recipients=[email],
                         html=html_body)
         try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
+            self._send_message(msg)
         except Exception:
-            self.logger.exception("Error occured while trying to send forgot password email!")
+            self.logger.exception("Error occurred while trying to send forgot password email!")
             return False
-        self.logger.info(f"Succesfully sent forgot password email to {kwargs}")
+        self.logger.info(f"Successfully sent forgot password email to {kwargs}")
         return True
     
     def send_approved_email(self, request_id) -> bool:
         row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
         if not row:
-            self.logging.error(f"Error sending approved email for request: {request_id}, row not found in db.")
+            self.logger.error(f"Error sending approved email for request: {request_id}, row not found in db.")
             return False
         
         name = row[0]
@@ -118,18 +200,17 @@ class EmailService:
         msg = Message(subject="Your ID submission has been approved!", recipients=[email], html=html_body)
 
         try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
+            self._send_message(msg)
         except Exception:
             self.logger.exception("An email error has occurred!")
             return False
-        self.logger.info(f"Submission notification succesfully sent to {email}")
+        self.logger.info(f"Submission notification successfully sent to {email}")
         return True
     
     def send_rejection_email(self, request_id, comments):
         row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
         if not row:
-            self.logging.error(f"Error sending reject email for request: {request_id}, row not found in db.")
+            self.logger.error(f"Error sending reject email for request: {request_id}, row not found in db.")
             return False
         
         name = row[0]
@@ -139,10 +220,9 @@ class EmailService:
         msg = Message(subject="Your ID submission has been rejected!", recipients=[email], html=html_body)
 
         try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
+            self._send_message(msg)
         except Exception:
             self.logger.exception("An email error has occurred!")
             return False
-        self.logger.info(f"Submission notification succesfully sent to {email}")
+        self.logger.info(f"Submission notification successfully sent to {email}")
         return True

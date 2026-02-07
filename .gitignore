@@ -5,3 +5,7 @@ docker/nginx/certs/**
 !docker/nginx/.gitignore
 __pycache__
 .dockerignore
+docker-compose.override.yml
+ldap_data/
+ldap_config/
+*.ldif

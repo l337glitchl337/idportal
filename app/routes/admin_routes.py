@@ -81,7 +81,7 @@ def logout():
         return redirect(url_for("admin.admin"))
     return redirect(url_for("user.home"))
 
-@admin_blueprint.route("/reject_submissiion", methods=["POST"])
+@admin_blueprint.route("/reject_submission", methods=["POST"])
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def reject_submission():
@@ -255,7 +255,7 @@ def delete_submission():
         if submission_service.delete(request_id):
             return {"success": True, "message": f"Deleted submission with id: {request_id} succesfully", "errors": None}
         else:
-            return {"sucess": False, "message": f"Failed to delete submission id: {request_id}", "errors": "err"}
+            return {"success": False, "message": f"Failed to delete submission id: {request_id}", "errors": "err"}
         
         
 

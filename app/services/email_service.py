@@ -122,7 +122,7 @@ class EmailService:
     def send_approved_email(self, request_id) -> bool:
         row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
         if not row:
-            self.logging.error(f"Error sending approved email for request: {request_id}, row not found in db.")
+            self.logger.error(f"Error sending approved email for request: {request_id}, row not found in db.")
             return False
         
         name = row[0]
@@ -143,7 +143,7 @@ class EmailService:
     def send_rejection_email(self, request_id, comments):
         row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
         if not row:
-            self.logging.error(f"Error sending reject email for request: {request_id}, row not found in db.")
+            self.logger.error(f"Error sending reject email for request: {request_id}, row not found in db.")
             return False
         
         name = row[0]

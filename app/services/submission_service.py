@@ -15,16 +15,17 @@ class SubmissionService:
         location = session["Location"]
         email = session["Email"]
 
-        result = self.db.execute_query("""insert into submissions 
-                                       (first_name, last_name, email, id_number, 
-                                       location, photo_filepath, license_filepath) 
-                                       values (%s, %s, %s, %s, %s, %s, %s)""",
-                                       (first_name, last_name, email, id_number, 
-                                        location, photo_filepath, license_filepath))
-        if not result:
+        row = self.db.execute_query("""insert into submissions
+                                       (first_name, last_name, email, id_number,
+                                       location, photo_filepath, license_filepath)
+                                       values (%s, %s, %s, %s, %s, %s, %s)
+                                       RETURNING request_id""",
+                                       (first_name, last_name, email, id_number,
+                                        location, photo_filepath, license_filepath),
+                                       fetch_one=True)
+        if not row:
             return False
-        request_id = self.db.execute_query("select request_id from submissions where email=%s", (email,), fetch_one=True)
-        session["request_id"] = request_id[0]
+        session["request_id"] = row[0]
         self.logger.info(f"Succesfully created submission for {email}")
         return True
     

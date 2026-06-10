@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, Blueprint, current_app, session
-from helpers import DecoratorHelper
+from helpers import DecoratorHelper, forgot_password_limiter
 import traceback
 import re
 
@@ -142,6 +142,9 @@ def forgot_password():
     email_service = current_app.email_service
     auth_service = current_app.auth_service
     if request.method == "POST":
+        if not forgot_password_limiter.is_allowed(request.remote_addr):
+            flash("Too many requests. Please try again later.", "danger")
+            return redirect(url_for("admin.forgot_password"))
         identifier = request.form.get("identifier")
         is_email = re.match(r"^[^@]+@[^@]+\.[^@]+$", identifier)
         if is_email:

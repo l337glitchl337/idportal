@@ -436,5 +436,5 @@ GRANT USAGE ON SEQUENCE public.submissions_request_id_seq TO idportal;
 --
 -- Create default admin account
 --
-INSERT INTO public.admins (first_name, last_name, username, password, email, status, on_login, role) VALUES ('Admin', 'Account', 'admin', '$2b$12$RrvdG7OilbQVI7WJaNHMKOWzZfxgsuCAuwyA9XkwqKeoI1UeOiX9e', 'admin@email.com', 1, 0, 'super');
+INSERT INTO public.admins (first_name, last_name, username, password, email, status, on_login, role) VALUES ('Admin', 'Account', 'admin', '$2b$12$RrvdG7OilbQVI7WJaNHMKOWzZfxgsuCAuwyA9XkwqKeoI1UeOiX9e', 'admin@email.com', 1, 1, 'super');
 

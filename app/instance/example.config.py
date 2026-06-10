@@ -42,10 +42,11 @@ COMPANY_EMAIL_SIGNATURE = "Demo Company ID Portal Team"
 # If you are wanting to use a local relay smtp server without authentication comment out
 # the MAIL_USERNAME and MAIL_PASSWORD lines below
 
-MAIL_SERVER             = "mx.example.com" 
-MAIL_PORT               = "25" 
+MAIL_SERVER             = "mx.example.com"
+MAIL_PORT               = "25"
 MAIL_USE_TLS            = "False"
-MAIL_USERNAME           = "admin@example.com" 
-MAIL_PASSWORD           = "your-email-password" 
-MAIL_DEFAULT_SENDER     = ("IDPortal Admin" , "no-reply-idportal@example.com")
-MAIL_DEFAULT_RECIP      = "idportal-admins@example.com" 
+MAIL_USERNAME           = "admin@example.com"
+MAIL_PASSWORD           = "your-email-password"
+MAIL_FROM_NAME          = "IDPortal Admin"
+MAIL_FROM_ADDRESS       = "no-reply-idportal@example.com"
+MAIL_DEFAULT_RECIP      = "idportal-admins@example.com"

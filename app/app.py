@@ -2,6 +2,7 @@ from flask import Flask
 from dotenv import load_dotenv
 from services import Database, AdminService, EmailService, LDAPService, SubmissionService, AuthService
 from routes import admin_blueprint, user_blueprint
+from helpers import generate_csrf_token, validate_csrf
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -29,6 +30,12 @@ def create_app():
             "REVIEW_REQUEST_URL" : app.config["REVIEW_REQUEST_URL"],
             "USER_LOGIN_URL" : app.config["USER_LOGIN_URL"]
         }
+    app.before_request(validate_csrf)
+
+    @app.context_processor
+    def inject_csrf():
+        return {"csrf_token": generate_csrf_token}
+
     app.json.sort_keys = False
     app.db = Database(app)
     app.admin_service = AdminService(app.db)

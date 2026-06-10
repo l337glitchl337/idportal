@@ -1,3 +1,5 @@
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
 function showResultModal(success, message, errors = {}) {
   const modalTitle = document.getElementById('resultModalTitle');
   const modalBody = document.getElementById('resultModalBody');
@@ -55,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fetch(batchEditUrl, {
       method: 'POST',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
       body: formData
     })
       .then(response => response.json())
@@ -106,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       fetch(batchEditUrl, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
         body: formData
       })
         .then(response => response.json())
@@ -130,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       fetch(approveUrl, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
         body: formData
       })
         .then(response => response.json())
@@ -190,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fetch(rejectUrl, {
           method: 'POST',
-          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
           body: formData
         })
           .then(response => response.json())
@@ -469,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fetch('/delete_admin_account', {
           method: 'POST',
-          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken },
           body: new URLSearchParams({ user_id: userId })
         })
         .then(response => response.json())
@@ -526,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
           fetch(deleteUrl, {
             method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
             body: formData
           })
             .then(response => response.json())

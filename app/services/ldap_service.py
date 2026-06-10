@@ -1,5 +1,6 @@
 from flask import request, flash
 from factories import get_logger
+from ldap.filter import escape_filter_chars
 import json
 import ldap
 
@@ -24,7 +25,7 @@ class LDAPService:
             if self.ldap_use_tls == "True":
                 conn.start_tls_s()
             conn.simple_bind_s(self.ldap_bind_dn, self.ldap_bind_pwd)
-            filter = self.ldap_search_filter.replace("OBJ", email)
+            filter = self.ldap_search_filter.replace("OBJ", escape_filter_chars(email))
             results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter, self.ldap_attributes_keys)
             conn.unbind_s()
         except Exception:

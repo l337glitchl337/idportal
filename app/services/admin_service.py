@@ -36,10 +36,10 @@ class AdminService:
                 admin_next_page = page + 1 if page < admin_pages else None
                 
                 if session["role"] == "super":
-                    rows = self.db.execute_query("select first_name || ' ' || last_name as full_name, email, username, role, id from admins order by id limit %s offset %s", 
-                                        (per_page, offset), 
+                    rows = self.db.execute_query("select first_name || ' ' || last_name as full_name, email, username, role, id from admins order by id limit %s offset %s",
+                                        (per_page, offset),
                                         fetch_all=True, dict_cursor=True)
-                    
+
                     admins = [row for row in rows]
 
                     return {
@@ -50,6 +50,7 @@ class AdminService:
                             "prev_page" : admin_prev_page
                         }
                     }
+                return {}
                         
             case "pending":
                 row = self.db.execute_query("select count(*) from submissions where status='N'", fetch_one=True)

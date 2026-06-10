@@ -30,7 +30,7 @@ class EmailService:
         html_body = render_template('email/student_email.html',
                                     subject=f"We have received your ID request!",
                                     student_name=session["cn"],
-                                    current_year="2025",
+                                    current_year=str(datetime.datetime.now().year),
                                     request_id=session["request_id"])
         student_msg = Message(
             subject="Thank you for submitting your request.",

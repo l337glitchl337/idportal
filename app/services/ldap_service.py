@@ -42,9 +42,10 @@ class LDAPService:
                 except Exception:
                     pass
 
-        if not results:
+        real_entries = [(dn, entry) for dn, entry in results if dn is not None]
+        if not real_entries:
             return None, {}
-        dn, entry = results[0]
+        dn, entry = real_entries[0]
         attrs = {}
         for display_name, ldap_key in self.ldap_attributes.items():
             attrs[display_name] = entry.get(ldap_key, [None])[0].decode()
@@ -84,7 +85,6 @@ class LDAPService:
         
     def check_user_submissions(self, email):
         count = self.db.execute_query("select count(*) from submissions where email=%s and status in ('N','A')", (email,), fetch_one=True)
-        print(count[0])
         if count[0] >= 1:
             self.logger.warning(f"Not accepting submission from {email}")
             self.logger.warning(f"{email} has a pending or approved submission in the db.")

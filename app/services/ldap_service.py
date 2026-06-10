@@ -19,19 +19,29 @@ class LDAPService:
         self.logger = get_logger("ldap_service")
         self.logger.info("LDAPService initialized.")
 
-    def search_user(self, email) -> str:
+    def _start_tls(self, conn):
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+        conn.start_tls_s()
+
+    def search_user(self, email) -> tuple:
+        conn = None
         try:
             conn = ldap.initialize(self.ldap_server)
-            if self.ldap_use_tls == "True":
-                conn.start_tls_s()
+            if self.ldap_use_tls.lower() == "true":
+                self._start_tls(conn)
             conn.simple_bind_s(self.ldap_bind_dn, self.ldap_bind_pwd)
-            filter = self.ldap_search_filter.replace("OBJ", escape_filter_chars(email))
-            results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter, self.ldap_attributes_keys)
-            conn.unbind_s()
+            filter_str = self.ldap_search_filter.replace("OBJ", escape_filter_chars(email))
+            results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter_str, self.ldap_attributes_keys)
         except Exception:
-            self.logger.exception("An LDAP error as occured while searching for a user!")
-            return None, False
-        
+            self.logger.exception("An LDAP error occurred while searching for a user!")
+            return None, {}
+        finally:
+            if conn:
+                try:
+                    conn.unbind_s()
+                except Exception:
+                    pass
+
         if not results:
             return None, {}
         dn, entry = results[0]
@@ -40,7 +50,7 @@ class LDAPService:
             attrs[display_name] = entry.get(ldap_key, [None])[0].decode()
         return dn, attrs
 
-    def auth_user(self, email, password) -> bool:
+    def auth_user(self, email, password) -> tuple:
         if self.auth_service.check_bfa(email, request.remote_addr, False):
             if not self.check_user_submissions(email):
                 msg = "You have a submission that is already approved or pending, please contact your local administrator for more information."
@@ -49,13 +59,13 @@ class LDAPService:
 
             if not dn:
                 return None, None, False
-            
+
+            conn = None
             try:
                 conn = ldap.initialize(self.ldap_server)
-                if self.ldap_use_tls == "True":
-                    conn.start_tls_s()
+                if self.ldap_use_tls.lower() == "true":
+                    self._start_tls(conn)
                 conn.simple_bind_s(dn, password)
-                conn.unbind_s()
                 attrs["dn"] = dn
                 self.logger.info(f"Succesfully authenticated {email} - {dn}")
                 return None, attrs, True
@@ -63,6 +73,12 @@ class LDAPService:
                 self.logger.exception(f"An error occured while trying to bind {email} - {dn}")
                 self.auth_service.check_bfa(email, request.remote_addr, True)
                 return None, None, False
+            finally:
+                if conn:
+                    try:
+                        conn.unbind_s()
+                    except Exception:
+                        pass
         else:
             return None, None, False
         

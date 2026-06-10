@@ -32,7 +32,7 @@ class DecoratorHelper:
     def check_first_login(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            if session["on_login"] == 1:
+            if session.get("on_login") == 1:
                 flash("Please change your password first!", "danger")
                 return redirect(url_for("admin.admin"))
             return f(*args, **kwargs)

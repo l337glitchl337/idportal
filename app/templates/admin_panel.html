@@ -226,6 +226,7 @@
       <div class="card bg-secondary text-white shadow-lg rounded-4 p-4 profile-form">
         <h4 class="mb-3">Edit Account</h4>
         <form method="POST" action="{{ url_for('admin.change_admin_password') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
             <input type="text" class="form-control" id="username" name="username" value="{{ current_user.username }}" disabled>
@@ -258,6 +259,7 @@
      <div class="tab-pane fade {% if active_tab == 'search' %}show active{% endif %}" id="search">
         <h4 class="mb-3">Search submissions</h4>
         <form class="d-flex" role="search" method="POST" action="{{ url_for('admin.search_submissions')}}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input class="form-control me-2" type="search" placeholder="Search for user submissions" aria-label="Search" name="search_term">
           <button class="btn btn-success" type="submit">Search</button>
         </form>

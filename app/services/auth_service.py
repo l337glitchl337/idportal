@@ -136,8 +136,8 @@ class AuthService:
                     self.db.execute_query("delete from bfa where email=%s", (email,))
                     return True
         elif not row and failed:
-            row = self.db.execute_query(f"""
+            row = self.db.execute_query("""
                         insert into bfa (email, ip_address)
-                        values ('{email}', '{ip_address}'::inet)""",
+                        values (%s, %s::inet)""",
                         (email, ip_address))
         return True

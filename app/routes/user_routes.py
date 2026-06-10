@@ -50,6 +50,9 @@ def upload_photo():
         if photo.filename == '' or drivers_license.filename == '':
             flash("Error", "danger")
             return redirect(url_for("user.home"))
+        if not UtilityHelper.is_valid_image(photo) or not UtilityHelper.is_valid_image(drivers_license):
+            flash("Only JPEG, PNG, or WebP images are accepted.", "danger")
+            return redirect(url_for("user.upload_form"))
         if photo and drivers_license:
             pfn = UtilityHelper.generate_unique_filename(photo.filename)
             lfn = UtilityHelper.generate_unique_filename(drivers_license.filename)

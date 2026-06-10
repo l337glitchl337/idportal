@@ -51,11 +51,25 @@ class EmailService:
         self.logger.info(f"Succesfully sent email alert to: {self.app.config["MAIL_DEFAULT_RECIP"]}, {session["Email"]}")
         return True
     
-    def send_welcome_email(self, username, password, first_name, email) -> bool:
+    def send_welcome_email(self, username, first_name, email) -> bool:
+        auth_service = self.app.auth_service
+        row = self.db.execute_query("select id from admins where username=%s", (username,), fetch_one=True)
+        if not row:
+            self.logger.error(f"Could not find admin {username} to send welcome email.")
+            return False
+        user_id = row[0]
+        url, token = auth_service.gen_random_forgot_password_link()
+        result = self.db.execute_query(
+            "insert into admin_forgot_password (user_id, token, expire_after) values (%s, %s, now() + interval '24 hours')",
+            (user_id, token)
+        )
+        if not result:
+            self.logger.error(f"Could not insert setup token for new admin {username}.")
+            return False
         html_body = render_template('email/admin_welcome.html',
                                     username=username,
-                                    password=password,
-                                    first_name=first_name)
+                                    first_name=first_name,
+                                    url=url)
         msg = Message(subject="Welcome to IDPortal!",
                     recipients=[email],
                     html=html_body)

@@ -51,13 +51,12 @@ def create_admin_account():
     first_name = request.form.get("first_name")
     last_name = request.form.get("last_name")
     username = request.form.get("username")
-    password = request.form.get("password")
     email = request.form.get("email")
     role = request.form.get("role")
 
-    if admin_service.create_admin(first_name, last_name, username, password, email, role):
+    if admin_service.create_admin(first_name, last_name, username, email, role):
         flash("Admin created succesfully!", "success")
-        email_service.send_welcome_email(username, password, first_name, email)
+        email_service.send_welcome_email(username, first_name, email)
     else:
         flash("Failed to create admin account. Please check logs for more details", "danger")
     return redirect(url_for("admin.admin_panel", active_tab="admins"))
@@ -207,7 +206,7 @@ def edit_admin_account():
     email = request.form.get("email")
     role = request.form.get("role")
 
-    if user_id == session["user_id"]:
+    if int(user_id) == session["user_id"]:
         flash("You cannot edit your own account from here. Please use the profile page.", "danger")
         return redirect(url_for("admin.admin_panel", active_tab="profile"))
 
@@ -227,7 +226,7 @@ def delete_admin_account():
         return {"success": False, "message": "You do not have permission to delete admin accounts"}
     
     user_id = request.form.get("user_id")
-    if user_id == session["user_id"]:
+    if int(user_id) == session["user_id"]:
         return {"success": False, "message": "You cannot delete your own account"}
 
     if admin_service.delete_admin(user_id):

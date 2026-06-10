@@ -1,5 +1,11 @@
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(str)));
+  return div.innerHTML;
+}
+
 function showResultModal(success, message, errors = {}) {
   const modalTitle = document.getElementById('resultModalTitle');
   const modalBody = document.getElementById('resultModalBody');
@@ -12,12 +18,12 @@ function showResultModal(success, message, errors = {}) {
 
   // Update modal title and message
   modalTitle.textContent = success ? "Success" : "Error";
-  modalBody.innerHTML = message;
+  modalBody.textContent = message;
 
   // Update modal errors if any
   if (Object.keys(errors).length > 0) {
     const errorList = Object.entries(errors)
-      .map(([id, error]) => `<li>Request ID ${id}: ${error}</li>`)
+      .map(([id, error]) => `<li>Request ID ${escapeHtml(id)}: ${escapeHtml(error)}</li>`)
       .join('');
     modalErrors.innerHTML = `<ul>${errorList}</ul>`;
   } else {
@@ -222,11 +228,11 @@ document.addEventListener('DOMContentLoaded', function () {
         photoModalBody.innerHTML = `
             <div class="mb-3 text-center">
                 <div class="fw-bold mb-1">User Photo</div>
-                <img src="${userPhotoUrl}" alt="User Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
+                <img src="${escapeHtml(userPhotoUrl)}" alt="User Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
             </div>
             <div class="text-center">
                 <div class="fw-bold mb-1">Driver's License</div>
-                <img src="${licensePhotoUrl}" alt="License Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
+                <img src="${escapeHtml(licensePhotoUrl)}" alt="License Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
             </div>
         `;
     });
@@ -344,6 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Populate the modal body with a form
     createAdminModalBody.innerHTML = `
       <form id="createAdminForm" method="POST" action="/create_admin_account">
+        <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
         <div class="mb-3">
           <label for="firstName" class="form-label">First Name</label>
           <input type="text" class="form-control" id="firstName" name="first_name" required>
@@ -359,10 +366,6 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="mb-3">
           <label for="email" class="form-label">Email</label>
           <input type="email" class="form-control" id="email" name="email" required>
-        </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Password</label>
-          <input type="password" class="form-control" id="password" name="password" required>
         </div>
         <div class="mb-3">
           <label for="role" class="form-label">Role</label>
@@ -401,22 +404,23 @@ document.addEventListener('DOMContentLoaded', function () {
       // Populate the modal body with a form
       editAdminModalBody.innerHTML = `
         <form id="createAdminForm" method="POST" action="/edit_admin_account">
-          <input type="hidden" name="user_id" value="${admin.id}">
+          <input type="hidden" name="user_id" value="${escapeHtml(admin.id)}">
+          <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
           <div class="mb-3">
         <label for="firstName" class="form-label">First Name</label>
-        <input type="text" class="form-control" id="firstName" name="first_name" value="${firstName}" required>
+        <input type="text" class="form-control" id="firstName" name="first_name" value="${escapeHtml(firstName)}" required>
           </div>
           <div class="mb-3">
         <label for="lastName" class="form-label">Last Name</label>
-        <input type="text" class="form-control" id="lastName" name="last_name" value="${lastName}" required>
+        <input type="text" class="form-control" id="lastName" name="last_name" value="${escapeHtml(lastName)}" required>
           </div>
           <div class="mb-3">
         <label for="username" class="form-label">Username</label>
-        <input type="text" class="form-control" id="username" name="username" value="${admin.username}" required>
+        <input type="text" class="form-control" id="username" name="username" value="${escapeHtml(admin.username)}" required>
           </div>
           <div class="mb-3">
         <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email" value="${admin.email}" required>
+        <input type="email" class="form-control" id="email" name="email" value="${escapeHtml(admin.email)}" required>
           </div>
           <div class="mb-3">
         <label for="role" class="form-label">Role</label>
@@ -452,8 +456,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Populate the modal body with confirmation message and confirm button
       deleteAdminModalBody.innerHTML = `
-        <p>Are you sure you want to delete admin <strong>${admin.full_name || admin.username}</strong>?</p>
-        <input type="hidden" id="deleteAdminUserId" value="${admin.id}">
+        <p>Are you sure you want to delete admin <strong>${escapeHtml(admin.full_name || admin.username)}</strong>?</p>
+        <input type="hidden" id="deleteAdminUserId" value="${escapeHtml(admin.id)}">
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">No</button>
           <button type="button" class="btn btn-danger" id="confirmDeleteAdminBtn">Yes, Delete</button>
@@ -511,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function () {
         deleteSubmissionModalBody.innerHTML = `
           <form id="deleteSubmission">
             <div class="mb-3">
-              <p>Are you sure you would like to delete this submission for <b>${name}</b>?</p>
+              <p>Are you sure you would like to delete this submission for <b>${escapeHtml(name)}</b>?</p>
             </div>
           </form>
         `;

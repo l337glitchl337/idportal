@@ -32,11 +32,12 @@ class LDAPService:
             self.logger.exception("An LDAP error as occured while searching for a user!")
             return None, False
         
+        if not results:
+            return None, {}
+        dn, entry = results[0]
         attrs = {}
-        if results:
-            dn, entry = results[0]
-            for display_name, ldap_key in self.ldap_attributes.items():
-                attrs[display_name] = entry.get(ldap_key, [None])[0].decode()
+        for display_name, ldap_key in self.ldap_attributes.items():
+            attrs[display_name] = entry.get(ldap_key, [None])[0].decode()
         return dn, attrs
 
     def auth_user(self, email, password) -> bool:

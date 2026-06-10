@@ -1,4 +1,5 @@
 import bcrypt
+import secrets
 from flask import session, flash
 from factories import get_logger
 from helpers import UtilityHelper
@@ -9,12 +10,10 @@ class AdminService:
         self.logger = get_logger("admin_service")
         self.logger.info("AdminService initialized.")
     
-    def create_admin(self, first_name, last_name, username, password, email, role) -> bool:
-        if not UtilityHelper.check_password_complexity(password):
-            return False
-        password = password.encode('utf-8')
+    def create_admin(self, first_name, last_name, username, email, role) -> bool:
+        random_password = secrets.token_urlsafe(32).encode('utf-8')
         salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password, salt).decode("utf-8")
+        hashed_password = bcrypt.hashpw(random_password, salt).decode("utf-8")
         result = self.db.execute_query(f"""
                               insert into admins
                             (first_name, last_name, username, password, email, role)

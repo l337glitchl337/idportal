@@ -30,10 +30,11 @@ class UtilityHelper:
 
     @staticmethod
     def check_password_complexity(password) -> bool:
-        # Minimum 8 characters, at least one uppercase letter, one lowercase letter, one digit, and one special character
-        pattern = pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$'
+        if len(password) > 128:
+            flash("Password must be 128 characters or fewer.", "danger")
+            return False
+        pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$'
         result = bool(re.match(pattern, password))
         if not result:
-            flash("Password must be a minimum 8 characters, at least one uppercase letter, one lowercase letter, one digit, and one special character", "danger")
-            return result
+            flash("Password must be at least 8 characters with uppercase, lowercase, digit, and special character.", "danger")
         return result

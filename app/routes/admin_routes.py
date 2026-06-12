@@ -4,7 +4,7 @@ import traceback
 import re
 import os
 
-_VALID_ROLES = {'admin', 'super'}
+_VALID_ROLES = {'manager', 'super'}
 _MAX_COMMENT_LEN = 250
 _NAME_RE = re.compile(r"^[A-Za-z\s'\-]{1,50}$")
 _USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{3,20}$")
@@ -182,6 +182,7 @@ def forgot_password():
             token = request.args.get("token")
             username = auth_service.validate_forgot_password_token(token)
             if username:
+                session.clear()
                 session["admin_username"] = username
                 session["forgot_password_token"] = token
                 return redirect(url_for("admin.change_admin_password"))
@@ -229,14 +230,37 @@ def edit_admin_account():
     if session["role"] != "super":
         flash("You do not have permission to edit admin accounts", "danger")
         return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    user_id = request.form.get("user_id")
-    first_name = request.form.get("first_name")
-    last_name = request.form.get("last_name")
-    username = request.form.get("username")
-    email = request.form.get("email")
-    role = request.form.get("role")
 
-    if int(user_id) == session["user_id"]:
+    user_id = request.form.get("user_id", "")
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    username = request.form.get("username", "").strip()
+    email = request.form.get("email", "").strip()
+    role = request.form.get("role", "").strip()
+
+    try:
+        user_id_int = int(user_id)
+    except (TypeError, ValueError):
+        flash("Invalid user ID.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+
+    if not _NAME_RE.match(first_name):
+        flash("First name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if not _NAME_RE.match(last_name):
+        flash("Last name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if not _USERNAME_RE.match(username):
+        flash("Username must be 3–20 alphanumeric characters or underscores.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if not _EMAIL_RE.match(email):
+        flash("Invalid email address.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if role not in _VALID_ROLES:
+        flash("Invalid role selected.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+
+    if user_id_int == session["user_id"]:
         flash("You cannot edit your own account from here. Please use the profile page.", "danger")
         return redirect(url_for("admin.admin_panel", active_tab="profile"))
 
@@ -254,9 +278,13 @@ def delete_admin_account():
     admin_service = current_app.admin_service
     if session["role"] != "super":
         return {"success": False, "message": "You do not have permission to delete admin accounts"}
-    
-    user_id = request.form.get("user_id")
-    if int(user_id) == session["user_id"]:
+
+    user_id = request.form.get("user_id", "")
+    try:
+        user_id_int = int(user_id)
+    except (TypeError, ValueError):
+        return {"success": False, "message": "Invalid user ID."}
+    if user_id_int == session["user_id"]:
         return {"success": False, "message": "You cannot delete your own account"}
 
     if admin_service.delete_admin(user_id):

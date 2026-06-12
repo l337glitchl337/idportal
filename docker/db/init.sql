@@ -27,7 +27,7 @@ SET default_table_access_method = heap;
 CREATE TABLE public.admin_forgot_password (
     id integer NOT NULL,
     expire_after timestamp with time zone DEFAULT (now() + '00:30:00'::interval),
-    token character varying(32),
+    token character varying(64),
     user_id integer NOT NULL
 );
 

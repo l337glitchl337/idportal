@@ -3,6 +3,21 @@ from dotenv import load_dotenv
 from services import Database, AdminService, EmailService, LDAPService, SubmissionService, AuthService
 from routes import admin_blueprint, user_blueprint
 from helpers import generate_csrf_token, validate_csrf
+import os
+
+_REQUIRED_CONFIG = [
+    "SECRET_KEY",
+    "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT",
+    "LDAP_URI", "LDAP_BIND_DN", "LDAP_BIND_PWD", "LDAP_SEARCH_BASE",
+    "LDAP_SEARCH_FILTER", "LDAP_USE_TLS",
+    "MAIL_SERVER", "MAIL_PORT", "MAIL_DEFAULT_SENDER",
+    "FORGOT_PASSWORD_URL", "SITE_TITLE",
+]
+
+def _validate_config(app):
+    missing = [k for k in _REQUIRED_CONFIG if not app.config.get(k)]
+    if missing:
+        raise RuntimeError(f"Missing required configuration variables: {', '.join(missing)}")
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -10,8 +25,10 @@ def create_app():
     env = app.config.get('ENV', 'production').title()
     app.config.from_object(f'config.{env}Config')
     app.config.from_pyfile('config.py', silent=True)
-    app.config["UPLOAD_FOLDER"] = "static/uploads"
+    app.config["UPLOAD_FOLDER"] = "/app/uploads"
     app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
+    _validate_config(app)
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     app.register_blueprint(admin_blueprint, url_prefix="/")
     app.register_blueprint(user_blueprint, url_prefix="/")
 

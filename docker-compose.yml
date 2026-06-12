@@ -17,7 +17,7 @@ services:
     volumes:
       - logs:/app/logs:z
       - config:/app/instance:z
-      - uploads:/app/static/uploads:z
+      - uploads:/app/uploads:z
     networks:
       - app-network
 
@@ -32,6 +32,12 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data:z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DBNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - app-network
 

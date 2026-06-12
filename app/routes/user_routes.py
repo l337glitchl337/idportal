@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, Blueprint, current_app, session
-from helpers import DecoratorHelper, UtilityHelper
+from helpers import DecoratorHelper, UtilityHelper, login_limiter
 import os
 
 user_blueprint = Blueprint("user", __name__)
@@ -10,6 +10,9 @@ def home():
 
 @user_blueprint.route("/login", methods=["POST"])
 def login():
+    if not login_limiter.is_allowed(request.remote_addr):
+        flash("Too many login attempts. Please try again later.", "danger")
+        return redirect(url_for("user.home"))
     ldap_service = current_app.ldap_service
     auth_service = current_app.auth_service
     if request.method == "POST":

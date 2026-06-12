@@ -75,8 +75,8 @@
             <td>{{ req.timestamp_inserted }}</td>
             <td>
               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
-                data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                data-photo-user="{{ url_for('admin.serve_upload', filename=req.photo_filepath) }}"
+                data-photo-license="{{ url_for('admin.serve_upload', filename=req.license_filepath) }}">
                 View Photos
               </button>
             </td>
@@ -118,8 +118,8 @@
             <td>{{ req.timestamp_inserted }}</td>
             <td>
               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
-                data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                data-photo-user="{{ url_for('admin.serve_upload', filename=req.photo_filepath) }}"
+                data-photo-license="{{ url_for('admin.serve_upload', filename=req.license_filepath) }}">
                 View Photos
               </button>
             </td>
@@ -164,8 +164,8 @@
             </td>
             <td>
               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('static', filename='uploads/' + req.photo_filepath) }}"
-                data-photo-license="{{ url_for('static', filename='uploads/' + req.license_filepath) }}">
+                data-photo-user="{{ url_for('admin.serve_upload', filename=req.photo_filepath) }}"
+                data-photo-license="{{ url_for('admin.serve_upload', filename=req.license_filepath) }}">
                 View Photos
               </button>
             </td>
@@ -288,8 +288,8 @@
             <td>{{ result.timestamp_inserted }}</td>
             <td>
               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('static', filename='uploads/' + result.photo_filepath) }}"
-                data-photo-license="{{ url_for('static', filename='uploads/' + result.license_filepath) }}">
+                data-photo-user="{{ url_for('admin.serve_upload', filename=result.photo_filepath) }}"
+                data-photo-license="{{ url_for('admin.serve_upload', filename=result.license_filepath) }}">
                 View Photos
               </button>
             </td>
@@ -300,11 +300,13 @@
           {% endfor %}
         </tbody>
       </table>
+      {% if active_tab == 'search' and search_pagination is defined %}
+        {{ macros.pagination(search_pagination, 'search', current_page) }}
       {% endif %}
     </div>
 
 
-    
+
   </div>
 </div>
 

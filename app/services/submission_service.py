@@ -29,33 +29,46 @@ class SubmissionService:
         self.logger.info(f"Succesfully created submission for {email}")
         return True
     
-    def approve_request(self, request_id) -> bool:
+    def approve_request(self, request_id, actor=None) -> bool:
         result = self.db.execute_query("update submissions set status=%s where request_id=%s", ('A', request_id))
         if not result:
             return False
-        self.logger.info(f"Request id: {request_id} was approved.")
+        self.logger.info(f"[AUDIT] request_id={request_id} approved by admin={actor}")
         self.mail.send_approved_email(request_id)
         return True
-    
-    def reject_request(self, request_id, comments) -> bool:
+
+    def reject_request(self, request_id, comments, actor=None) -> bool:
         result = self.db.execute_query("update submissions set status=%s, comments=%s where request_id=%s", ('R', comments, request_id))
         if not result:
-            return False 
-        self.logger.info(f"Request id: {request_id} was rejected.")
-        self.logger.info(f"Rejection comments for request id {request_id}: [{comments}]")
+            return False
+        self.logger.info(f"[AUDIT] request_id={request_id} rejected by admin={actor} comments=[{comments}]")
         self.mail.send_rejection_email(request_id, comments)
         return True
-    
-    def search(self, search_term) -> dict:
-        rows = self.db.execute_query("SELECT * FROM submissions WHERE search_vector @@ plainto_tsquery(%s);", (search_term,), fetch_all=True, dict_cursor=True)
-        if not rows:
+
+    def search(self, search_term, page=1, per_page=15) -> dict:
+        offset = (page - 1) * per_page
+        count_row = self.db.execute_query(
+            "SELECT count(*) FROM submissions WHERE search_vector @@ plainto_tsquery(%s)",
+            (search_term,), fetch_one=True)
+        total = count_row[0] if count_row else 0
+        if total == 0:
             return None
-        results = [row for row in rows]
-        search_results = {"search_results":results}
-        return search_results
-    
-    def delete(self, request_id) -> bool:
-        r = self.db.execute_query("delete from submissions where request_id=%s", (request_id,),)
+        rows = self.db.execute_query(
+            "SELECT * FROM submissions WHERE search_vector @@ plainto_tsquery(%s) ORDER BY request_id LIMIT %s OFFSET %s",
+            (search_term, per_page, offset), fetch_all=True, dict_cursor=True)
+        total_pages = (total + per_page - 1) // per_page
+        return {
+            "search_results": [row for row in rows],
+            "search_pagination": {
+                "total_pages": total_pages,
+                "next_page": page + 1 if page < total_pages else None,
+                "prev_page": page - 1 if page > 1 else None
+            }
+        }
+
+    def delete(self, request_id, actor=None) -> bool:
+        r = self.db.execute_query("delete from submissions where request_id=%s", (request_id,))
         if not r:
             return False
+        self.logger.info(f"[AUDIT] request_id={request_id} deleted by admin={actor}")
         return True

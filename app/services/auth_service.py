@@ -1,4 +1,5 @@
 import bcrypt
+import hashlib
 from flask import session, flash, current_app, request
 from uuid import uuid4
 from factories import get_logger
@@ -77,25 +78,29 @@ class AuthService:
         self.logger.info(f"{username} succesfully compared password.")
         return True
 
+    def _hash_token(self, token: str) -> str:
+        return hashlib.sha256(token.encode()).hexdigest()
+
     def gen_random_forgot_password_link(self) -> str:
         token = uuid4().hex
         url = f"{current_app.config['FORGOT_PASSWORD_URL']}?token={token}"
-        self.logger.debug(f"Token and url generated for forgot password request: {url}, {token}")
+        self.logger.debug("Token and url generated for forgot password request.")
         return url, token
-    
+
     def validate_forgot_password_token(self, token) -> bool:
-        row = self.db.execute_query("""select a.username from admin_forgot_password b join 
-                                    admins a on b.user_id=a.id where token=%s 
-                                    and expire_after > now()""", (token,), fetch_one=True)
+        token_hash = self._hash_token(token)
+        row = self.db.execute_query("""select a.username from admin_forgot_password b join
+                                    admins a on b.user_id=a.id where token=%s
+                                    and expire_after > now()""", (token_hash,), fetch_one=True)
         if not row:
-            self.logger.info(f"Unable to validate token {token}")
+            self.logger.info("Unable to validate token.")
             return False
-        self.logger.info(f"Token succesfully validated for user {row[0]}")
-        self.logger.debug(f"Token: {token} username {row[0]}")
+        self.logger.info(f"Token successfully validated for user {row[0]}.")
         return row[0]
-    
+
     def del_forgot_password_token(self, token) -> bool:
-        self.db.execute_query("delete from admin_forgot_password where token=%s", (token,))
+        token_hash = self._hash_token(token)
+        self.db.execute_query("delete from admin_forgot_password where token=%s", (token_hash,))
         return True
     
     def set_session_attrs(self, attrs) -> bool:

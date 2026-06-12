@@ -300,6 +300,7 @@
           {% endfor %}
         </tbody>
       </table>
+      {% endif %}
       {% if active_tab == 'search' and search_pagination is defined %}
         {{ macros.pagination(search_pagination, 'search', current_page) }}
       {% endif %}

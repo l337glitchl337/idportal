@@ -22,7 +22,7 @@ def _validate_config(app):
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     load_dotenv()
-    env = app.config.get('ENV', 'production').title()
+    env = os.environ.get('FLASK_ENV', 'production').title()
     app.config.from_object(f'config.{env}Config')
     app.config.from_pyfile('config.py', silent=True)
     app.config["UPLOAD_FOLDER"] = "/app/uploads"

@@ -288,19 +288,27 @@ document.addEventListener('DOMContentLoaded', function () {
   // Handle "View Comments" button click
   document.querySelectorAll('.btn-warning[data-comments]').forEach(button => {
     button.addEventListener('click', function () {
-      const comments = this.getAttribute('data-comments'); // Get the comments from the button's data attribute
+      const comments = this.getAttribute('data-comments');
 
-      // Populate the modal body with the comments
-      commentsModalBody.innerHTML = `
-        <div class="mb-3">
-          <label class="form-label">Rejection Comments</label>
-          <textarea class="form-control" rows="4" readonly>${comments}</textarea>
-        </div>
-      `;
+      const label = document.createElement('label');
+      label.className = 'form-label';
+      label.textContent = 'Rejection Comments';
 
-      // Show the modal
-      const modalInstance = bootstrap.Modal.getOrCreateInstance(commentsModal);
-      modalInstance.show();
+      const textarea = document.createElement('textarea');
+      textarea.className = 'form-control';
+      textarea.rows = 4;
+      textarea.readOnly = true;
+      textarea.textContent = comments;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-3';
+      wrapper.appendChild(label);
+      wrapper.appendChild(textarea);
+
+      commentsModalBody.innerHTML = '';
+      commentsModalBody.appendChild(wrapper);
+
+      bootstrap.Modal.getOrCreateInstance(commentsModal).show();
     });
   });
 });
@@ -510,8 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('.deleteSubmissionBtn[data-request-id]').forEach(button => {
       button.addEventListener('click', function () {
-        const requestId = this.getAttribute('data-request-id'); // Get the request ID from the button
-        console.log(requestId);
+        const requestId = this.getAttribute('data-request-id');
 
         
         const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');

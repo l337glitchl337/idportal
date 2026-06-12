@@ -1,4 +1,9 @@
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const _cfg = JSON.parse(document.getElementById('app-config').textContent);
+const batchEditUrl = _cfg.batchEditUrl;
+const approveUrl   = _cfg.approveUrl;
+const rejectUrl    = _cfg.rejectUrl;
+const deleteUrl    = _cfg.deleteUrl;
 
 function escapeHtml(str) {
   const div = document.createElement('div');

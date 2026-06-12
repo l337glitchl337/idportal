@@ -1,9 +1,15 @@
 import os
+from datetime import timedelta
 
 class BaseConfig:
     #BASE FLASK CONFIG
-    SECRET_KEY              = os.getenv("SECRET_KEY")
-    UPLOAD_FOLDER           = os.getenv("UPLOAD_FOLDER")
+    SECRET_KEY                  = os.getenv("SECRET_KEY")
+    UPLOAD_FOLDER               = os.getenv("UPLOAD_FOLDER")
+
+    # Session security
+    SESSION_COOKIE_HTTPONLY     = True
+    SESSION_COOKIE_SAMESITE     = 'Lax'
+    PERMANENT_SESSION_LIFETIME  = timedelta(hours=8)
     
     #LDAP CONFIGURATION
     LDAP_URI                = os.getenv("LDAP_URI")
@@ -47,6 +53,8 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
+    SESSION_COOKIE_SECURE = False
 
 class ProductionConfig(BaseConfig):
     DEBUG = False
+    SESSION_COOKIE_SECURE = True

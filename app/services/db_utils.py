@@ -1,42 +1,37 @@
-import psycopg2
-from factories import get_logger
+from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import RealDictCursor
+from factories import get_logger
 
 class Database:
     def __init__(self, app=None):
-        self.db_params = {
-            "dbname" : app.config["POSTGRES_DB"],
-            "user" : app.config["POSTGRES_USER"],
-            "password" : app.config["POSTGRES_PASSWORD"],
-            "host" : app.config["POSTGRES_HOST"],
-            "port" : app.config["POSTGRES_PORT"]
-        }
+        self.pool = ThreadedConnectionPool(
+            minconn=2,
+            maxconn=10,
+            dbname=app.config["POSTGRES_DB"],
+            user=app.config["POSTGRES_USER"],
+            password=app.config["POSTGRES_PASSWORD"],
+            host=app.config["POSTGRES_HOST"],
+            port=app.config["POSTGRES_PORT"]
+        )
         self.logger = get_logger("db_utils")
-        self.logger.info("Database initialized.")
-    
+        self.logger.info("Database pool initialized.")
+
     def execute_query(self, query, params=(), fetch_one=False, fetch_all=False, dict_cursor=False):
+        conn = self.pool.getconn()
         try:
-            with psycopg2.connect(**self.db_params) as conn:
-                if not dict_cursor:
-                    with conn.cursor() as cursor:
-                        cursor.execute(query, params)
-                        if fetch_one:
-                            return cursor.fetchone()
-                        elif fetch_all:
-                            return cursor.fetchall()
-                        else:
-                            conn.commit()
+            cursor_factory = RealDictCursor if dict_cursor else None
+            with conn.cursor(cursor_factory=cursor_factory) as cursor:
+                cursor.execute(query, params)
+                if fetch_one:
+                    return cursor.fetchone()
+                elif fetch_all:
+                    return cursor.fetchall()
                 else:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        cursor.execute(query, params)
-                        if fetch_one:
-                            return cursor.fetchone()
-                        elif fetch_all:
-                            return cursor.fetchall()
-                        else:
-                            conn.commit()
+                    conn.commit()
         except Exception:
+            conn.rollback()
             self.logger.exception("An SQL error has occurred!")
             return None
-        
+        finally:
+            self.pool.putconn(conn)
         return True

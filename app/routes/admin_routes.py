@@ -1,7 +1,14 @@
-from flask import render_template, request, redirect, url_for, flash, Blueprint, current_app, session
+from flask import render_template, request, redirect, url_for, flash, Blueprint, current_app, session, send_from_directory
 from helpers import DecoratorHelper, forgot_password_limiter
 import traceback
 import re
+import os
+
+_VALID_ROLES = {'admin', 'super'}
+_MAX_COMMENT_LEN = 250
+_NAME_RE = re.compile(r"^[A-Za-z\s'\-]{1,50}$")
+_USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{3,20}$")
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 admin_blueprint = Blueprint("admin", __name__)
 
@@ -33,9 +40,9 @@ def admin_panel():
     current_user = {"username": session["admin_username"], "role": session["role"], "email": session["email"], "user_id": session["user_id"]}
 
     if request.args.get("search_term"):
-        results = submission_service.search(request.args.get("search_term"))
+        results = submission_service.search(request.args.get("search_term"), page=page)
         if results:
-            return render_template("admin_panel.html", active_tab=active_tab, **results, current_user=current_user)
+            return render_template("admin_panel.html", active_tab=active_tab, **results, current_user=current_user, current_page=page)
         else:
             flash("No submissions found for that search term!", "info")
             return redirect(url_for("admin.admin_panel", active_tab="search"))
@@ -48,11 +55,27 @@ def admin_panel():
 def create_admin_account():
     admin_service = current_app.admin_service
     email_service = current_app.email_service
-    first_name = request.form.get("first_name")
-    last_name = request.form.get("last_name")
-    username = request.form.get("username")
-    email = request.form.get("email")
-    role = request.form.get("role")
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    username = request.form.get("username", "").strip()
+    email = request.form.get("email", "").strip()
+    role = request.form.get("role", "").strip()
+
+    if not _NAME_RE.match(first_name):
+        flash("First name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if not _NAME_RE.match(last_name):
+        flash("Last name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if not _USERNAME_RE.match(username):
+        flash("Username must be 3–20 alphanumeric characters or underscores.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if not _EMAIL_RE.match(email):
+        flash("Invalid email address.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+    if role not in _VALID_ROLES:
+        flash("Invalid role selected.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
 
     if admin_service.create_admin(first_name, last_name, username, email, role):
         flash("Admin created succesfully!", "success")
@@ -87,9 +110,10 @@ def logout():
 def reject_submission():
     submission_service = current_app.submission_service
     request_id = request.form.get("request_id")
-    comments = request.form.get("comments")
-    
-    if submission_service.reject_request(request_id, comments):
+    comments = request.form.get("comments", "")
+    if len(comments) > _MAX_COMMENT_LEN:
+        return {"success": False, "message": f"Comments must be {_MAX_COMMENT_LEN} characters or fewer."}
+    if submission_service.reject_request(request_id, comments, actor=session.get("admin_username")):
         return {"success": True, "message": "Submission rejected successfully!"}
     else:
         return {"success": False, "message": "Failed to reject submission. Please check logs for more details"}
@@ -100,7 +124,7 @@ def reject_submission():
 def approve_submission():
     submission_service = current_app.submission_service
     request_id = request.form.get("request_id")
-    if submission_service.approve_request(request_id):
+    if submission_service.approve_request(request_id, actor=session.get("admin_username")):
         return {"success": True, "message": "Submission approved successfully!"}
     else:
         return {"success": False, "message": "Failed to approve submission. Please check logs for more details"}
@@ -176,16 +200,19 @@ def batch_edit():
     comments = request.form.get("comments", "")
     errors = {}
 
+    actor = session.get("admin_username")
     if action == "approve":
         for request_id in request_ids:
-            if not submission_service.approve_request(request_id):
+            if not submission_service.approve_request(request_id, actor=actor):
                 errors[request_id] = "Failed to approve request"
         if errors:
             return {"success": False, "message": "Failed to approve one or more requests", "errors": errors}
         return {"success": True, "message": "All submissions approved successfully!"}
     elif action == "reject":
+        if len(comments) > _MAX_COMMENT_LEN:
+            return {"success": False, "message": f"Comments must be {_MAX_COMMENT_LEN} characters or fewer."}
         for request_id in request_ids:
-            if not submission_service.reject_request(request_id, comments):
+            if not submission_service.reject_request(request_id, comments, actor=actor):
                 errors[request_id] = "Failed to reject request"
         if errors:
             return {"success": False, "message": "Failed to reject one or more requests", "errors": errors}
@@ -252,10 +279,15 @@ def delete_submission():
     if request.method == "POST":
         request_id = request.form.get("request_id")
         submission_service = current_app.submission_service
-        if submission_service.delete(request_id):
+        if submission_service.delete(request_id, actor=session.get("admin_username")):
             return {"success": True, "message": f"Deleted submission with id: {request_id} succesfully", "errors": None}
         else:
             return {"success": False, "message": f"Failed to delete submission id: {request_id}", "errors": "err"}
+
+@admin_blueprint.route("/uploads/<path:filename>")
+@DecoratorHelper.check_admin_login
+def serve_upload(filename):
+    return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
         
         
 

@@ -48,7 +48,8 @@ class LDAPService:
         dn, entry = real_entries[0]
         attrs = {}
         for display_name, ldap_key in self.ldap_attributes.items():
-            attrs[display_name] = entry.get(ldap_key, [None])[0].decode()
+            val = entry.get(ldap_key, [b''])[0]
+            attrs[display_name] = val.decode('utf-8', errors='replace') if isinstance(val, bytes) else (val or '')
         return dn, attrs
 
     def auth_user(self, email, password) -> tuple:

@@ -61,7 +61,7 @@ class EmailService:
         url, token = auth_service.gen_random_forgot_password_link()
         result = self.db.execute_query(
             "insert into admin_forgot_password (user_id, token, expire_after) values (%s, %s, now() + interval '24 hours')",
-            (user_id, token)
+            (user_id, auth_service._hash_token(token))
         )
         if not result:
             self.logger.error(f"Could not insert setup token for new admin {username}.")
@@ -88,9 +88,10 @@ class EmailService:
             row = self.db.execute_query("select first_name || ' ' || last_name, username, email, id from admins where email=%s", (kwargs["email"],), fetch_one=True)
         else:
             row = self.db.execute_query("select first_name || ' ' || last_name, username, email, id from admins where username=%s", (kwargs["username"],), fetch_one=True)
+        # Always generate a token regardless of whether user exists to normalise response time
+        _, _ = auth_service.gen_random_forgot_password_link()
         if not row:
-            self.logger.error("Error occured while trying to send forgot password email")
-            self.logger.error(f"Unable to find record for {kwargs}")
+            self.logger.warning(f"Forgot password requested for unknown identifier: {kwargs}")
             return False
         
         email = row[2]
@@ -99,7 +100,7 @@ class EmailService:
         user_id = row[3]
         url, token = auth_service.gen_random_forgot_password_link()
 
-        result = self.db.execute_query("insert into admin_forgot_password (user_id, token) values (%s, %s)", (user_id, token))
+        result = self.db.execute_query("insert into admin_forgot_password (user_id, token) values (%s, %s)", (user_id, auth_service._hash_token(token)))
         if not result:
             return False
 

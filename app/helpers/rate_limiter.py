@@ -22,3 +22,4 @@ class RateLimiter:
 
 
 forgot_password_limiter = RateLimiter(max_calls=5, period=300)
+login_limiter = RateLimiter(max_calls=10, period=300)

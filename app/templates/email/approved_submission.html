@@ -1,39 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>{{ subject }}</title>
-  <style>
-    body { margin:0; padding:0; background:#f4f4f4; }
-    table { border-collapse:collapse; width:100%; max-width:600px; margin:0 auto; background:#fff; font-family:Arial,sans-serif; color:#333; }
-    .header { background:#004085; padding:20px; text-align:center; }
-    .header img { max-width:150px; }
-    .content { padding:30px 20px; line-height:1.5; font-size:16px; }
-    .content h1 { font-size:22px; color:#004085; margin-top:0; }
-    .content p { margin:15px 0; }
-    .footer { background:#e9ecef; padding:20px; font-size:12px; text-align:center; color:#666; }
-    .btn { display:inline-block; background:#28a745; color:#fff!important; padding:12px 20px; border-radius:4px; text-decoration:none; font-weight:bold; }
-  </style>
-</head>
-<body>
-  <table>
-    <tr>
-      <td class="header">
-      </td>
-    </tr>
-    <tr>
-      <td class="content">
-        <h1>Hello {{ student_name }},</h1>
-        <p>Your ID submission has been approved and is currently being printed!</p>
-        <p>For more information please call <a href="tel:{{ COMPANY_PHONE }}">{{ COMPANY_PHONE }}</a></p>
-        <p>Best regards,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
-      </td>
-    </tr>
-    <tr>
-      <td class="footer">
-        © {{ COMPANY_CURRENT_YEAR }} {{ COMPANY_NAME }} • {{ COMPANY_ADDRESS }} • {{ COMPANY_STATE_ZIP }} • {{ COMPANY_PHONE }}
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+{% extends "email/base_email.html" %}
+{% block title %}Your ID submission has been approved!{% endblock %}
+{% block content %}
+<h1>Hello {{ student_name }},</h1>
+<p>Your ID submission has been approved and is currently being printed!</p>
+<p>For more information please call <a href="tel:{{ COMPANY_PHONE }}">{{ COMPANY_PHONE }}</a></p>
+<p>Best regards,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
+{% endblock %}

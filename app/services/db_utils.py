@@ -23,15 +23,16 @@ class Database:
             with conn.cursor(cursor_factory=cursor_factory) as cursor:
                 cursor.execute(query, params)
                 if fetch_one:
-                    return cursor.fetchone()
+                    result = cursor.fetchone()
                 elif fetch_all:
-                    return cursor.fetchall()
+                    result = cursor.fetchall()
                 else:
-                    conn.commit()
+                    result = True
+                conn.commit()
+                return result
         except Exception:
             conn.rollback()
             self.logger.exception("An SQL error has occurred!")
             return None
         finally:
             self.pool.putconn(conn)
-        return True

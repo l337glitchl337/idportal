@@ -28,6 +28,7 @@ class AuthService:
                 self.check_bfa(username, request.remote_addr, True)
                 return False
             session.clear()
+            session.permanent = True
             session["first_name"] = row[0]
             session["last_name"] = row[1]
             session["admin_username"] = row[2]
@@ -100,6 +101,7 @@ class AuthService:
     def set_session_attrs(self, attrs) -> bool:
         try:
             session.clear()
+            session.permanent = True
             for k, v in attrs.items():
                 session[k] = v
             session["user_logged_in"] = True

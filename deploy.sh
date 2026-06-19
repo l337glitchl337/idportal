@@ -2,10 +2,15 @@
 # IDPortal production deploy script.
 # Usage:
 #   ./deploy.sh              # auto-detect: fresh install if .env missing, update otherwise
-#   ./deploy.sh --update     # rebuild + restart (skip setup wizard)
-#   ./deploy.sh --fresh      # re-run first-time setup wizard
-#   ./deploy.sh --no-cache   # pass through to docker build (forces full rebuild)
-#   ./deploy.sh --test       # production stack + MailHog + OpenLDAP on ports 8080/8443
+#   ./deploy.sh --update     # rebuild + restart existing install (prompts if behind origin)
+#   ./deploy.sh --no-cache   # force full Docker layer rebuild
+#   ./deploy.sh --test       # full prod stack + MailHog + OpenLDAP on ports 8080/8443
+#
+# Fresh install:
+#   1. Run ./deploy.sh  →  .env is created; fill in every CHANGE_ME value
+#   2. Run ./deploy.sh  →  builds, deploys, then walks you through first admin setup
+#
+# To start completely fresh: stop containers, delete .env, re-run step 1.
 set -euo pipefail
 
 # ─── Output helpers ───────────────────────────────────────────────────────────
@@ -32,21 +37,20 @@ CTR_DB="postgres_db"
 CTR_NGINX="nginx_proxy"
 
 # ─── CLI flags ────────────────────────────────────────────────────────────────
-MODE="auto"        # auto | fresh | update
+MODE="auto"        # auto | update
 BUILD_ARGS=""
 TEST_MODE=false
 
 for arg in "$@"; do
     case "$arg" in
-        --fresh)     MODE="fresh" ;;
         --update)    MODE="update" ;;
         --no-cache)  BUILD_ARGS="--no-cache" ;;
         --test)      TEST_MODE=true ;;
         --help|-h)
-            sed -n '2,7p' "$0" | sed 's/^# //'
+            sed -n '2,10p' "$0" | sed 's/^# //'
             exit 0
             ;;
-        *) die "Unknown argument: $arg" ;;
+        *) die "Unknown argument: $arg  (run $0 --help)" ;;
     esac
 done
 
@@ -55,7 +59,7 @@ if $TEST_MODE; then
     CTR_FLASK="flask_test"
     CTR_DB="postgres_test"
     CTR_NGINX="nginx_test"
-    [[ -f "$COMPOSE_FILE" ]] || die "$COMPOSE_FILE not found. It may have been deleted (it is gitignored and not in the repo)."
+    [[ -f "$COMPOSE_FILE" ]] || die "$COMPOSE_FILE not found (it is gitignored — check that the file exists locally)."
 fi
 
 # ─── Prerequisites ────────────────────────────────────────────────────────────
@@ -67,7 +71,7 @@ check_prerequisites() {
     done
     docker compose version &>/dev/null || missing+=("docker-compose-plugin")
     [[ ${#missing[@]} -eq 0 ]] || die "Missing required tools: ${missing[*]}"
-    [[ -f "$COMPOSE_FILE" ]] || die "Run this script from the repo root (docker-compose.yml not found)"
+    [[ -f "$COMPOSE_FILE" ]] || die "Run this script from the repo root ($COMPOSE_FILE not found)"
     ok "All prerequisites met"
 }
 
@@ -78,6 +82,7 @@ REQUIRED_VARS=(
     SECRET_KEY
     POSTGRES_DB POSTGRES_DBNAME POSTGRES_USER POSTGRES_PASSWORD POSTGRES_HOST POSTGRES_PORT
     LDAP_URI LDAP_BIND_DN LDAP_BIND_PWD LDAP_SEARCH_BASE LDAP_SEARCH_FILTER LDAP_USE_TLS
+    LDAP_ATTRIBUTES
     MAIL_SERVER MAIL_PORT MAIL_FROM_NAME MAIL_FROM_ADDRESS MAIL_DEFAULT_RECIP
     FORGOT_PASSWORD_URL SITE_TITLE LOGO
     USER_LOGIN_URL REVIEW_REQUEST_URL ADMIN_URL
@@ -87,24 +92,41 @@ REQUIRED_VARS=(
 
 validate_env() {
     step "Validating environment"
-    [[ -f "$ENV_FILE" ]] || die "$ENV_FILE not found. Run without --update for first-time setup."
-    local missing=()
+    [[ -f "$ENV_FILE" ]] || die "$ENV_FILE not found. Run ./deploy.sh without flags to start setup."
+
+    local missing=() unfilled=()
     for var in "${REQUIRED_VARS[@]}"; do
-        [[ -n "$(env_get "$var")" ]] || missing+=("$var")
+        local val
+        val=$(env_get "$var")
+        if [[ -z "$val" ]]; then
+            missing+=("$var")
+        elif [[ "$val" == *"CHANGE_ME"* ]]; then
+            unfilled+=("$var")
+        fi
     done
+
     if [[ ${#missing[@]} -gt 0 ]]; then
-        error "Missing required variables in $ENV_FILE:"
+        error "Missing variables in $ENV_FILE (add these):"
         for v in "${missing[@]}"; do echo "    $v"; done
-        die "Fill in all required variables and re-run."
+        echo
     fi
-    ok "All required variables present"
+    if [[ ${#unfilled[@]} -gt 0 ]]; then
+        error "These variables still have placeholder values in $ENV_FILE:"
+        for v in "${unfilled[@]}"; do echo "    $v = $(env_get "$v")"; done
+        echo
+    fi
+    [[ ${#missing[@]} -eq 0 && ${#unfilled[@]} -eq 0 ]] || \
+        die "Fix the above in $ENV_FILE and re-run."
+
+    ok "All required variables are set"
 }
 
 # ─── First-time .env setup ────────────────────────────────────────────────────
 setup_env() {
     step "Environment setup"
     if [[ -f "$ENV_FILE" ]]; then
-        warn ".env already exists — skipping generation (delete it to start completely fresh)"
+        warn ".env already exists — skipping generation"
+        warn "To start over: stop containers, delete .env, then re-run this script"
         return
     fi
 
@@ -114,6 +136,9 @@ setup_env() {
     postgres_password=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 
     cat > "$ENV_FILE" <<EOF
+# Generated by deploy.sh on $(date '+%Y-%m-%d %H:%M:%S')
+# Replace every CHANGE_ME value before re-running deploy.sh.
+
 # ─── Flask ────────────────────────────────────────────────────────────────────
 SECRET_KEY=${secret_key}
 
@@ -126,40 +151,55 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 
 # ─── LDAP / Active Directory ──────────────────────────────────────────────────
-LDAP_URI=ldap://your-ad-server:389
-LDAP_BIND_DN=CN=svc_idportal,OU=Service Accounts,DC=example,DC=com
-LDAP_BIND_PWD=
-LDAP_SEARCH_BASE=OU=Users,DC=example,DC=com
+# LDAP_URI      — your AD server, e.g. ldap://ad.example.com:389
+# LDAP_BIND_DN  — service account DN used to search the directory
+# LDAP_BIND_PWD — service account password
+# LDAP_SEARCH_BASE   — OU where user accounts live
+# LDAP_SEARCH_FILTER — (mail=OBJ) means "search by email"; OBJ is replaced at runtime
+# LDAP_ATTRIBUTES    — JSON map of display labels to AD attribute names
+# LDAP_USE_TLS       — True or False
+LDAP_URI=CHANGE_ME
+LDAP_BIND_DN=CHANGE_ME
+LDAP_BIND_PWD=CHANGE_ME
+LDAP_SEARCH_BASE=CHANGE_ME
 LDAP_SEARCH_FILTER=(mail=OBJ)
 LDAP_ATTRIBUTES={"First Name":"givenName","Last Name":"sn","ID Number":"employeeID","Location":"physicalDeliveryOfficeName","cn":"cn","Email":"mail"}
 LDAP_USE_TLS=False
 
+# ─── Site URLs ────────────────────────────────────────────────────────────────
+# All four must be the public HTTPS URL of your server.
+USER_LOGIN_URL=CHANGE_ME
+FORGOT_PASSWORD_URL=CHANGE_ME/forgot_password
+REVIEW_REQUEST_URL=CHANGE_ME/admin_panel
+ADMIN_URL=CHANGE_ME/admin
+
 # ─── Branding ─────────────────────────────────────────────────────────────────
 SITE_TITLE=IDPortal
 LOGO=portal_logo.png
-USER_LOGIN_URL=https://yourdomain.com
-FORGOT_PASSWORD_URL=https://yourdomain.com/forgot_password
-REVIEW_REQUEST_URL=https://yourdomain.com/admin_panel
-ADMIN_URL=https://yourdomain.com/admin
-COMPANY_NAME=Your Company
-COMPANY_ADDRESS=123 Main Street
-COMPANY_STATE_ZIP=City, ST 00000
-COMPANY_PHONE=(555) 555-5555
+COMPANY_NAME=CHANGE_ME
+COMPANY_ADDRESS=CHANGE_ME
+COMPANY_STATE_ZIP=CHANGE_ME
+COMPANY_PHONE=CHANGE_ME
 COMPANY_CURRENT_YEAR=$(date +%Y)
-COMPANY_EMAIL_SIGNATURE=The IDPortal Team
+COMPANY_EMAIL_SIGNATURE=CHANGE_ME
 
 # ─── Email (SMTP) ─────────────────────────────────────────────────────────────
-MAIL_SERVER=smtp.yourdomain.com
+MAIL_SERVER=CHANGE_ME
 MAIL_PORT=587
 MAIL_FROM_NAME=IDPortal
-MAIL_FROM_ADDRESS=noreply@yourdomain.com
-MAIL_DEFAULT_RECIP=idportal-admin@yourdomain.com
+MAIL_FROM_ADDRESS=CHANGE_ME
+MAIL_DEFAULT_RECIP=CHANGE_ME
 EOF
 
     ok "$ENV_FILE created with generated secrets"
     echo
-    warn "ACTION REQUIRED: Edit $ENV_FILE and fill in all empty/placeholder values."
-    warn "When done, re-run: $0"
+    echo -e "${BOLD}Next steps:${RESET}"
+    echo "  1. Edit $ENV_FILE and replace every CHANGE_ME value"
+    echo "  2. Place your SSL certificate at:"
+    echo "       $CERTS_DIR/cert.pem"
+    echo "       $CERTS_DIR/key.pem"
+    echo "  3. Re-run: $0"
+    echo
     exit 0
 }
 
@@ -170,12 +210,10 @@ setup_certs() {
 
     if [[ -f "$CERTS_DIR/cert.pem" && -f "$CERTS_DIR/key.pem" ]]; then
         ok "Certificates found"
-        # Warn if expiring within 30 days
-        local expiry days_left
+        local expiry days_left exp_epoch now_epoch
         expiry=$(openssl x509 -enddate -noout -in "$CERTS_DIR/cert.pem" 2>/dev/null \
                  | cut -d= -f2 || true)
         if [[ -n "$expiry" ]]; then
-            local exp_epoch now_epoch
             exp_epoch=$(date -d "$expiry" +%s 2>/dev/null \
                         || date -j -f "%b %d %T %Y %Z" "$expiry" +%s 2>/dev/null \
                         || echo 0)
@@ -203,15 +241,18 @@ setup_certs() {
     fi
 
     echo
-    echo -e "  No certificate found in ${CYAN}${CERTS_DIR}/${RESET}"
-    echo "  Options:"
-    echo "    1) I will copy cert.pem / key.pem to $CERTS_DIR/ manually (then re-run)"
-    echo "    2) Generate a self-signed certificate (not trusted by browsers — testing only)"
+    echo -e "${YELLOW}  No SSL certificate found in ${CERTS_DIR}/${RESET}"
     echo
-    read -rp "  Choice [1/2]: " choice
-    case "$choice" in
-        1) die "Copy your cert.pem and key.pem to $CERTS_DIR/ then re-run." ;;
-        2)
+    echo "  For production: place your CA-signed cert and key here:"
+    echo "    $CERTS_DIR/cert.pem"
+    echo "    $CERTS_DIR/key.pem"
+    echo
+    echo "  For testing only: generate a self-signed certificate instead"
+    echo "  (browsers will show a security warning — not suitable for production)"
+    echo
+    read -rp "  Generate self-signed cert for testing? [y/N]: " choice
+    case "${choice,,}" in
+        y|yes)
             openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
                 -keyout "$CERTS_DIR/key.pem" \
                 -out   "$CERTS_DIR/cert.pem" \
@@ -219,18 +260,44 @@ setup_certs() {
                 2>/dev/null
             chmod 600 "$CERTS_DIR/key.pem"
             ok "Self-signed certificate generated (365 days)"
-            warn "Self-signed certs trigger browser warnings — use a CA-signed cert for production"
+            warn "Replace with a CA-signed cert before going live"
             ;;
-        *) die "Invalid choice" ;;
+        *)
+            die "Place cert.pem and key.pem in $CERTS_DIR/ then re-run."
+            ;;
     esac
+}
+
+# ─── Git update check ─────────────────────────────────────────────────────────
+check_git_status() {
+    command -v git &>/dev/null || return
+    [[ -d .git ]] || return
+    git fetch origin --quiet 2>/dev/null || return
+
+    local behind
+    behind=$(git rev-list "HEAD..@{upstream}" --count 2>/dev/null || echo "0")
+    if [[ "$behind" -gt 0 ]]; then
+        echo
+        warn "$behind commit(s) on origin haven't been pulled yet."
+        warn "Running 'git pull' before deploying ensures you ship the latest changes."
+        echo
+        read -rp "  Pull latest changes now? [Y/n]: " confirm
+        case "${confirm,,}" in
+            n|no) warn "Continuing without pulling — make sure this is intentional" ;;
+            *)
+                git pull
+                ok "Up to date"
+                ;;
+        esac
+    else
+        ok "Already up to date with origin"
+    fi
 }
 
 # ─── Database backup (pre-update) ─────────────────────────────────────────────
 backup_db() {
-    # Only run if the DB container is already up
-    if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${CTR_DB}$"; then
-        return
-    fi
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${CTR_DB}$" || return
+
     step "Database backup"
     local backup_dir="backups"
     local timestamp; timestamp=$(date +%Y%m%d_%H%M%S)
@@ -238,18 +305,25 @@ backup_db() {
     mkdir -p "$backup_dir"
 
     info "Dumping database to ${backup_file}..."
-    local db_user; db_user=$(env_get "POSTGRES_USER")
-    local db_name; db_name=$(env_get "POSTGRES_DBNAME")
+    local db_user db_name
+    db_user=$(env_get "POSTGRES_USER")
+    db_name=$(env_get "POSTGRES_DBNAME")
 
-    if docker exec "$CTR_DB" pg_dump -U "$db_user" "$db_name" \
-            2>/dev/null | gzip > "$backup_file"; then
+    if docker exec "$CTR_DB" pg_dump -U "$db_user" "$db_name" 2>/dev/null \
+            | gzip > "$backup_file"; then
         ok "Backup saved: $backup_file"
     else
-        warn "Database backup failed — continuing, but proceed with caution"
         rm -f "$backup_file"
+        echo
+        warn "Database backup FAILED before deployment."
+        warn "Deploying without a backup means you cannot roll back if something goes wrong."
+        echo
+        read -rp "  Continue without a backup? [y/N]: " confirm
+        [[ "${confirm,,}" == "y" ]] || die "Aborted. Investigate backup failure and retry."
+        warn "Continuing without backup — you have been warned"
     fi
 
-    # Keep only the 10 most recent backups
+    # Retain only the 10 most recent backups
     ls -t "${backup_dir}"/idportal_*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm --
 }
 
@@ -275,7 +349,6 @@ wait_healthy() {
     local timeout="${2:-90}"
     local elapsed=0
 
-    # If the container has no healthcheck, just confirm it's running
     local has_health
     has_health=$(docker inspect --format='{{if .State.Health}}yes{{end}}' \
                  "$container" 2>/dev/null || true)
@@ -286,7 +359,7 @@ wait_healthy() {
         die "$container is not running (state: $state)"
     fi
 
-    info "Waiting for $container to pass health check (timeout: ${timeout}s)..."
+    info "Waiting for $container to be healthy (timeout: ${timeout}s)..."
     while true; do
         local status
         status=$(docker inspect --format='{{.State.Health.Status}}' \
@@ -297,7 +370,7 @@ wait_healthy() {
                 return 0
                 ;;
             unhealthy)
-                error "$container failed health check"
+                error "$container failed its health check"
                 docker logs --tail 20 "$container" >&2 || true
                 die "Deployment aborted. Run 'docker logs $container' for details."
                 ;;
@@ -308,7 +381,7 @@ wait_healthy() {
             die "Deployment timed out."
         }
         sleep 3; elapsed=$((elapsed + 3))
-        printf "  %s (%ds elapsed)...\r" "$status" "$elapsed"
+        printf "  %s (%ds)...\r" "$status" "$elapsed"
     done
 }
 
@@ -326,38 +399,106 @@ verify() {
             all_ok=false
         fi
     done
-    $all_ok || die "One or more containers are not running. Run: docker compose logs"
+    $all_ok || die "One or more containers are not running. Run: docker compose -f $COMPOSE_FILE logs"
+}
+
+# ─── First admin bootstrap ────────────────────────────────────────────────────
+bootstrap_first_admin() {
+    local db_user db_name
+    db_user=$(env_get "POSTGRES_USER")
+    db_name=$(env_get "POSTGRES_DBNAME")
+
+    local count
+    count=$(docker exec "$CTR_DB" psql -U "$db_user" -d "$db_name" \
+            -tAc "SELECT COUNT(*) FROM admins;" 2>/dev/null | tr -d '[:space:]' || echo "0")
+
+    [[ "$count" == "0" ]] || { ok "Admin accounts already exist — skipping bootstrap"; return; }
+
+    step "First admin account setup"
+    echo "  No admin accounts found. Set up your first super admin now."
+    echo
+    read -rp "  First name : " fn
+    read -rp "  Last name  : " ln
+    read -rp "  Username   : " un
+    read -rp "  Email      : " em
+    echo
+
+    # Generate hashed password + setup token inside the Flask container
+    # (bcrypt and hashlib are available there; avoids host dependency)
+    local creds
+    creds=$(docker exec "$CTR_FLASK" python3 - <<'PYEOF'
+import bcrypt, secrets, hashlib, uuid
+pw = secrets.token_urlsafe(32).encode()
+hashed = bcrypt.hashpw(pw, bcrypt.gensalt()).decode()
+token = uuid.uuid4().hex
+token_hash = hashlib.sha256(token.encode()).hexdigest()
+print(hashed + "|" + token + "|" + token_hash)
+PYEOF
+)
+    local hashed_pw token token_hash
+    hashed_pw="${creds%%|*}"
+    token="${creds#*|}"; token="${token%%|*}"
+    token_hash="${creds##*|}"
+
+    # Escape single quotes for SQL
+    local fn_e ln_e un_e em_e pw_e
+    fn_e="${fn//\'/\'\'}"; ln_e="${ln//\'/\'\'}"; un_e="${un//\'/\'\'}"
+    em_e="${em//\'/\'\'}"; pw_e="${hashed_pw//\'/\'\'}"
+
+    # Insert admin and get ID
+    local user_id
+    user_id=$(docker exec "$CTR_DB" psql -U "$db_user" -d "$db_name" -tAc \
+        "INSERT INTO admins (first_name, last_name, username, email, role, password)
+         VALUES ('${fn_e}', '${ln_e}', '${un_e}', '${em_e}', 'super', '${pw_e}')
+         RETURNING id;" | tr -d '[:space:]')
+
+    # Insert 24-hour setup token
+    docker exec "$CTR_DB" psql -U "$db_user" -d "$db_name" -c \
+        "INSERT INTO admin_forgot_password (user_id, token, expire_after)
+         VALUES (${user_id}, '${token_hash}', now() + interval '24 hours');" > /dev/null
+
+    local forgot_url
+    forgot_url=$(env_get "FORGOT_PASSWORD_URL")
+
+    ok "Super admin '${un}' created"
+    echo
+    echo -e "  ${BOLD}${YELLOW}Set your password using this link (expires in 24 hours):${RESET}"
+    echo -e "  ${CYAN}${forgot_url}?token=${token}${RESET}"
+    echo
+    warn "Save this link — it will not be shown again."
 }
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
 print_summary() {
+    local cf_flag=""
+    $TEST_MODE && cf_flag="-f $COMPOSE_FILE "
+
     echo
     echo -e "${GREEN}${BOLD}╔══════════════════════════════════╗${RESET}"
-    echo -e "${GREEN}${BOLD}║   Deployment complete!           ║${RESET}"
+    echo -e "${GREEN}${BOLD}║     Deployment complete!         ║${RESET}"
     echo -e "${GREEN}${BOLD}╚══════════════════════════════════╝${RESET}"
     echo
     if $TEST_MODE; then
-        echo -e "  User portal : ${CYAN}https://localhost:8443${RESET}  (self-signed — accept the browser warning)"
-        echo -e "  Admin panel : ${CYAN}https://localhost:8443/admin${RESET}"
-        echo -e "  MailHog     : ${CYAN}http://localhost:8025${RESET}"
-        echo -e "  HTTP        : ${CYAN}http://localhost:8080${RESET}  → redirects to 8443"
+        echo -e "  Portal  : ${CYAN}https://localhost:8443${RESET}  (accept the self-signed cert warning)"
+        echo -e "  Admin   : ${CYAN}https://localhost:8443/admin${RESET}"
+        echo -e "  MailHog : ${CYAN}http://localhost:8025${RESET}"
+        echo -e "  HTTP    : http://localhost:8080  →  redirects to 8443"
         echo
-        echo -e "  Test credentials (LDAP): testuser@dev.local / TestPass123!"
+        echo -e "  Test LDAP login: testuser@dev.local / TestPass123!"
     else
         local site_url admin_url
         site_url=$(env_get "USER_LOGIN_URL")
         admin_url=$(env_get "ADMIN_URL")
-        echo -e "  User portal : ${CYAN}${site_url}${RESET}"
-        echo -e "  Admin panel : ${CYAN}${admin_url}${RESET}"
+        echo -e "  Portal : ${CYAN}${site_url}${RESET}"
+        echo -e "  Admin  : ${CYAN}${admin_url}${RESET}"
     fi
     echo
-    local cf_flag=""
-    $TEST_MODE && cf_flag="-f $COMPOSE_FILE "
     echo -e "  Useful commands:"
-    echo -e "    docker compose ${cf_flag}logs -f              # tail all logs"
-    echo -e "    docker compose ${cf_flag}logs -f ${CTR_FLASK}  # tail app logs"
+    echo -e "    docker compose ${cf_flag}logs -f              # stream all logs"
+    echo -e "    docker compose ${cf_flag}logs -f ${CTR_FLASK}  # stream app logs"
     echo -e "    docker compose ${cf_flag}ps                   # container status"
-    echo -e "    docker compose ${cf_flag}down                 # stop all services"
+    echo -e "    docker compose ${cf_flag}down                 # stop everything"
+    echo -e "    ./deploy.sh --update                       # upgrade to latest version"
     echo
 }
 
@@ -365,7 +506,7 @@ print_summary() {
 main() {
     echo
     echo -e "${BOLD}╔══════════════════════════════════╗${RESET}"
-    echo -e "${BOLD}║     IDPortal  ·  Deploy          ║${RESET}"
+    echo -e "${BOLD}║      IDPortal  ·  Deploy         ║${RESET}"
     echo -e "${BOLD}╚══════════════════════════════════╝${RESET}"
     echo
 
@@ -378,10 +519,11 @@ main() {
     info "Mode: $MODE"
 
     if [[ "$MODE" == "fresh" ]]; then
-        setup_env       # exits after creating .env stub if it didn't exist
+        setup_env       # exits after writing .env stub if it didn't exist
         validate_env
         setup_certs
     else
+        check_git_status
         validate_env
         setup_certs
         backup_db
@@ -395,6 +537,7 @@ main() {
     wait_healthy "$CTR_NGINX" 30
 
     verify
+    bootstrap_first_admin
     print_summary
 }
 

@@ -6,5 +6,4 @@ docker/nginx/certs/**
 __pycache__
 .dockerignore
 dev/
-docker-compose.test.yml
 backups/

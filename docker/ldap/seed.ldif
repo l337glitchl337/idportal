@@ -1,0 +1,32 @@
+# Users OU — must exist before any user entries
+dn: ou=Users,dc=dev,dc=local
+objectClass: organizationalUnit
+ou: Users
+
+# ─── Test User 1 ──────────────────────────────────────────────────────────────
+# Login: testuser@dev.local / TestPass123!
+dn: cn=Test User,ou=Users,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Test User
+sn: User
+givenName: Test
+mail: testuser@dev.local
+title: T12345
+o: Main Campus
+userPassword: TestPass123!
+
+# ─── Test User 2 ──────────────────────────────────────────────────────────────
+# Login: jane.doe@dev.local / TestPass456!
+dn: cn=Jane Doe,ou=Users,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Jane Doe
+sn: Doe
+givenName: Jane
+mail: jane.doe@dev.local
+title: J67890
+o: North Campus
+userPassword: TestPass456!

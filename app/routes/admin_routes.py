@@ -53,6 +53,9 @@ def admin_panel():
 @DecoratorHelper.check_admin_login
 @DecoratorHelper.check_first_login
 def create_admin_account():
+    if session["role"] != "super":
+        flash("You do not have permission to create admin accounts.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="admins"))
     admin_service = current_app.admin_service
     email_service = current_app.email_service
     first_name = request.form.get("first_name", "").strip()

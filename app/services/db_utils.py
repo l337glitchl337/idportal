@@ -22,16 +22,16 @@ class Database:
             cursor_factory = RealDictCursor if dict_cursor else None
             with conn.cursor(cursor_factory=cursor_factory) as cursor:
                 cursor.execute(query, params)
+                result = None
                 if fetch_one:
-                    return cursor.fetchone()
+                    result = cursor.fetchone()
                 elif fetch_all:
-                    return cursor.fetchall()
-                else:
-                    conn.commit()
+                    result = cursor.fetchall()
+                conn.commit()
+                return result if (fetch_one or fetch_all) else True
         except Exception:
             conn.rollback()
             self.logger.exception("An SQL error has occurred!")
             return None
         finally:
             self.pool.putconn(conn)
-        return True

@@ -21,8 +21,11 @@ class AuthService:
             if not row:
                 self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - User not found")
                 return False
-            self.logger.debug(f"Row from db on admin loging: {row}")
-            
+
+            if row[5] != 1:
+                self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - Account disabled")
+                return False
+
             db_password = row[4]
             if not bcrypt.checkpw(password.encode("utf-8"), db_password.encode("utf-8")):
                 self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - Incorrect password")
@@ -112,10 +115,10 @@ class AuthService:
             session["user_logged_in"] = True
             session["attrs"] = attrs
 
-            self.logger.info(f"Succesfully set session attibutes for: {attrs}")
+            self.logger.info(f"Successfully set session attributes for: {attrs.get('Email', 'unknown')}")
             return True
-        except:
-            self.logger.error(f"Could not set session attributes for: {attrs}")
+        except Exception:
+            self.logger.error(f"Could not set session attributes for user: {attrs.get('Email', 'unknown')}")
             return False
         
     def check_bfa(self, email, ip_address, failed) -> bool:

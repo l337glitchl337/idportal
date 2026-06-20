@@ -5,3 +5,6 @@ docker/nginx/certs/**
 !docker/nginx/.gitignore
 __pycache__
 .dockerignore
+dev/
+docker-compose.test.yml
+backups/

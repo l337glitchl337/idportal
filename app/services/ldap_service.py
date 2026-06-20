@@ -1,6 +1,6 @@
 from flask import request
 from factories import get_logger
-from ldap.filter import escape_filter_chars
+from ldap.filter import filter_format
 import json
 import ldap
 
@@ -35,7 +35,7 @@ class LDAPService:
             if self.ldap_use_tls:
                 self._start_tls(conn)
             conn.simple_bind_s(self.ldap_bind_dn, self.ldap_bind_pwd)
-            filter_str = self.ldap_search_filter.replace("OBJ", escape_filter_chars(email))
+            filter_str = filter_format(self.ldap_search_filter, [email])
             results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter_str, self.ldap_attributes_keys)
         except Exception:
             self.logger.exception("An LDAP error occurred while searching for a user!")

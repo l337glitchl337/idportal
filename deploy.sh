@@ -154,7 +154,8 @@ POSTGRES_PORT=5432
 # LDAP_BIND_DN  — service account DN used to search the directory
 # LDAP_BIND_PWD — service account password
 # LDAP_SEARCH_BASE   — OU where user accounts live
-# LDAP_SEARCH_FILTER — (mail=OBJ) means "search by email"; OBJ is replaced at runtime
+# LDAP_SEARCH_FILTER — filter to find users; %s is replaced with the user's email at runtime
+#                      e.g. (mail=%s) or (userPrincipalName=%s)
 # LDAP_ATTRIBUTES    — JSON map of display labels to AD attribute names
 # LDAP_USE_TLS       — true enables STARTTLS on ldap:// connections
 #                      For LDAPS (port 636) set LDAP_URI=ldaps://host:636 and LDAP_USE_TLS=false
@@ -164,7 +165,7 @@ LDAP_URI=CHANGE_ME
 LDAP_BIND_DN=CHANGE_ME
 LDAP_BIND_PWD=CHANGE_ME
 LDAP_SEARCH_BASE=CHANGE_ME
-LDAP_SEARCH_FILTER=(mail=OBJ)
+LDAP_SEARCH_FILTER=(mail=%s)
 LDAP_ATTRIBUTES={"First Name":"givenName","Last Name":"sn","ID Number":"employeeID","Location":"physicalDeliveryOfficeName","cn":"cn","Email":"mail"}
 LDAP_USE_TLS=false
 #LDAP_TLS_CACERTFILE=/etc/ssl/certs/my-ca.pem

@@ -36,7 +36,7 @@ def create_app():
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 
     # ── PostgreSQL ────────────────────────────────────────────────────────────
-    app.config["POSTGRES_DB"]       = os.environ.get("POSTGRES_DBNAME")
+    app.config["POSTGRES_DB"]       = os.environ.get("POSTGRES_DB")
     app.config["POSTGRES_USER"]     = os.environ.get("POSTGRES_USER")
     app.config["POSTGRES_PASSWORD"] = os.environ.get("POSTGRES_PASSWORD")
     app.config["POSTGRES_HOST"]     = os.environ.get("POSTGRES_HOST")
@@ -48,8 +48,9 @@ def create_app():
     app.config["LDAP_BIND_PWD"]      = os.environ.get("LDAP_BIND_PWD")
     app.config["LDAP_SEARCH_BASE"]   = os.environ.get("LDAP_SEARCH_BASE")
     app.config["LDAP_SEARCH_FILTER"] = os.environ.get("LDAP_SEARCH_FILTER")
-    app.config["LDAP_ATTRIBUTES"]    = os.environ.get("LDAP_ATTRIBUTES", "{}")
-    app.config["LDAP_USE_TLS"]       = os.environ.get("LDAP_USE_TLS")
+    app.config["LDAP_ATTRIBUTES"]      = os.environ.get("LDAP_ATTRIBUTES", "{}")
+    app.config["LDAP_USE_TLS"]         = os.environ.get("LDAP_USE_TLS")
+    app.config["LDAP_TLS_CACERTFILE"]  = os.environ.get("LDAP_TLS_CACERTFILE")
 
     # ── Email ─────────────────────────────────────────────────────────────────
     app.config["MAIL_SERVER"]         = os.environ.get("MAIL_SERVER")

@@ -11,7 +11,7 @@ _REQUIRED_CONFIG = [
     "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT",
     "LDAP_URI", "LDAP_BIND_DN", "LDAP_BIND_PWD", "LDAP_SEARCH_BASE",
     "LDAP_SEARCH_FILTER", "LDAP_USE_TLS",
-    "MAIL_SERVER", "MAIL_PORT", "MAIL_DEFAULT_SENDER",
+    "MAIL_SERVER", "MAIL_PORT", "MAIL_FROM_NAME", "MAIL_FROM_ADDRESS",
     "FORGOT_PASSWORD_URL", "SITE_TITLE",
 ]
 
@@ -36,7 +36,7 @@ def create_app():
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 
     # ── PostgreSQL ────────────────────────────────────────────────────────────
-    app.config["POSTGRES_DB"]       = os.environ.get("POSTGRES_DBNAME")
+    app.config["POSTGRES_DB"]       = os.environ.get("POSTGRES_DB")
     app.config["POSTGRES_USER"]     = os.environ.get("POSTGRES_USER")
     app.config["POSTGRES_PASSWORD"] = os.environ.get("POSTGRES_PASSWORD")
     app.config["POSTGRES_HOST"]     = os.environ.get("POSTGRES_HOST")
@@ -48,14 +48,21 @@ def create_app():
     app.config["LDAP_BIND_PWD"]      = os.environ.get("LDAP_BIND_PWD")
     app.config["LDAP_SEARCH_BASE"]   = os.environ.get("LDAP_SEARCH_BASE")
     app.config["LDAP_SEARCH_FILTER"] = os.environ.get("LDAP_SEARCH_FILTER")
-    app.config["LDAP_ATTRIBUTES"]    = os.environ.get("LDAP_ATTRIBUTES", "{}")
-    app.config["LDAP_USE_TLS"]       = os.environ.get("LDAP_USE_TLS")
+    app.config["LDAP_ATTRIBUTES"]      = os.environ.get("LDAP_ATTRIBUTES", "{}")
+    app.config["LDAP_USE_TLS"]         = os.environ.get("LDAP_USE_TLS")
+    app.config["LDAP_TLS_CACERTFILE"]  = os.environ.get("LDAP_TLS_CACERTFILE")
 
     # ── Email ─────────────────────────────────────────────────────────────────
     app.config["MAIL_SERVER"]         = os.environ.get("MAIL_SERVER")
-    app.config["MAIL_PORT"]           = os.environ.get("MAIL_PORT")
+    app.config["MAIL_PORT"]           = int(os.environ.get("MAIL_PORT", 25))
+    app.config["MAIL_FROM_NAME"]      = os.environ.get("MAIL_FROM_NAME")
+    app.config["MAIL_FROM_ADDRESS"]   = os.environ.get("MAIL_FROM_ADDRESS")
     app.config["MAIL_DEFAULT_SENDER"] = (os.environ.get("MAIL_FROM_NAME"), os.environ.get("MAIL_FROM_ADDRESS"))
     app.config["MAIL_DEFAULT_RECIP"]  = os.environ.get("MAIL_DEFAULT_RECIP")
+    app.config["MAIL_USE_TLS"]        = os.environ.get("MAIL_USE_TLS", "false").lower() == "true"
+    app.config["MAIL_USE_SSL"]        = os.environ.get("MAIL_USE_SSL", "false").lower() == "true"
+    app.config["MAIL_USERNAME"]       = os.environ.get("MAIL_USERNAME")
+    app.config["MAIL_PASSWORD"]       = os.environ.get("MAIL_PASSWORD")
 
     # ── Branding ──────────────────────────────────────────────────────────────
     app.config["SITE_TITLE"]              = os.environ.get("SITE_TITLE")

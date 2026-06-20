@@ -1,6 +1,6 @@
-from flask import request, flash
+from flask import request
 from factories import get_logger
-from ldap.filter import escape_filter_chars
+from ldap.filter import filter_format
 import json
 import ldap
 
@@ -13,24 +13,29 @@ class LDAPService:
         self.ldap_search_filter = app.config["LDAP_SEARCH_FILTER"]
         self.ldap_attributes = json.loads(app.config["LDAP_ATTRIBUTES"])
         self.ldap_attributes_keys = list(self.ldap_attributes.values())
-        self.ldap_use_tls = app.config["LDAP_USE_TLS"]
+        raw_tls = app.config["LDAP_USE_TLS"]
+        self.ldap_use_tls = raw_tls if isinstance(raw_tls, bool) else str(raw_tls).lower() == "true"
+        self.ldap_tls_cacertfile = app.config.get("LDAP_TLS_CACERTFILE") or None
         self.auth_service = auth_service
         self.db = db
         self.logger = get_logger("ldap_service")
         self.logger.info("LDAPService initialized.")
 
     def _start_tls(self, conn):
-        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+        if self.ldap_tls_cacertfile:
+            conn.set_option(ldap.OPT_X_TLS_CACERTFILE, self.ldap_tls_cacertfile)
+        conn.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+        conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
         conn.start_tls_s()
 
     def search_user(self, email) -> tuple:
         conn = None
         try:
             conn = ldap.initialize(self.ldap_server)
-            if self.ldap_use_tls.lower() == "true":
+            if self.ldap_use_tls:
                 self._start_tls(conn)
             conn.simple_bind_s(self.ldap_bind_dn, self.ldap_bind_pwd)
-            filter_str = self.ldap_search_filter.replace("OBJ", escape_filter_chars(email))
+            filter_str = filter_format(self.ldap_search_filter, [email])
             results = conn.search_s(self.ldap_search_base, ldap.SCOPE_SUBTREE, filter_str, self.ldap_attributes_keys)
         except Exception:
             self.logger.exception("An LDAP error occurred while searching for a user!")
@@ -65,7 +70,7 @@ class LDAPService:
             conn = None
             try:
                 conn = ldap.initialize(self.ldap_server)
-                if self.ldap_use_tls.lower() == "true":
+                if self.ldap_use_tls:
                     self._start_tls(conn)
                 conn.simple_bind_s(dn, password)
                 attrs["dn"] = dn

@@ -80,7 +80,7 @@ env_get() { grep -E "^${1}=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- || true; }
 
 REQUIRED_VARS=(
     SECRET_KEY
-    POSTGRES_DB POSTGRES_DBNAME POSTGRES_USER POSTGRES_PASSWORD POSTGRES_HOST POSTGRES_PORT
+    POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD POSTGRES_HOST POSTGRES_PORT
     LDAP_URI LDAP_BIND_DN LDAP_BIND_PWD LDAP_SEARCH_BASE LDAP_SEARCH_FILTER LDAP_USE_TLS
     LDAP_ATTRIBUTES
     MAIL_SERVER MAIL_PORT MAIL_FROM_NAME MAIL_FROM_ADDRESS MAIL_DEFAULT_RECIP
@@ -144,7 +144,6 @@ SECRET_KEY=${secret_key}
 
 # ─── PostgreSQL ───────────────────────────────────────────────────────────────
 POSTGRES_DB=idportal
-POSTGRES_DBNAME=idportal
 POSTGRES_USER=idportal
 POSTGRES_PASSWORD=${postgres_password}
 POSTGRES_HOST=db
@@ -155,16 +154,21 @@ POSTGRES_PORT=5432
 # LDAP_BIND_DN  — service account DN used to search the directory
 # LDAP_BIND_PWD — service account password
 # LDAP_SEARCH_BASE   — OU where user accounts live
-# LDAP_SEARCH_FILTER — (mail=OBJ) means "search by email"; OBJ is replaced at runtime
+# LDAP_SEARCH_FILTER — filter to find users; %s is replaced with the user's email at runtime
+#                      e.g. (mail=%s) or (userPrincipalName=%s)
 # LDAP_ATTRIBUTES    — JSON map of display labels to AD attribute names
-# LDAP_USE_TLS       — True or False
+# LDAP_USE_TLS       — true enables STARTTLS on ldap:// connections
+#                      For LDAPS (port 636) set LDAP_URI=ldaps://host:636 and LDAP_USE_TLS=false
+# LDAP_TLS_CACERTFILE — (optional) absolute path to CA cert PEM for private/enterprise CAs
+#                       Required when your LDAP server uses a self-signed or internal CA cert
 LDAP_URI=CHANGE_ME
 LDAP_BIND_DN=CHANGE_ME
 LDAP_BIND_PWD=CHANGE_ME
 LDAP_SEARCH_BASE=CHANGE_ME
-LDAP_SEARCH_FILTER=(mail=OBJ)
+LDAP_SEARCH_FILTER=(mail=%s)
 LDAP_ATTRIBUTES={"First Name":"givenName","Last Name":"sn","ID Number":"employeeID","Location":"physicalDeliveryOfficeName","cn":"cn","Email":"mail"}
-LDAP_USE_TLS=False
+LDAP_USE_TLS=false
+#LDAP_TLS_CACERTFILE=/etc/ssl/certs/my-ca.pem
 
 # ─── Site URLs ────────────────────────────────────────────────────────────────
 # All four must be the public HTTPS URL of your server.
@@ -184,8 +188,17 @@ COMPANY_CURRENT_YEAR=$(date +%Y)
 COMPANY_EMAIL_SIGNATURE=CHANGE_ME
 
 # ─── Email (SMTP) ─────────────────────────────────────────────────────────────
+# For an unauthenticated internal relay (port 25): leave MAIL_USE_TLS=false
+#   and comment out MAIL_USERNAME / MAIL_PASSWORD.
+# For authenticated SMTP (e.g. port 587 STARTTLS): set MAIL_USE_TLS=true
+#   and fill in MAIL_USERNAME / MAIL_PASSWORD.
+# For SSL/TLS-only (port 465): set MAIL_USE_SSL=true instead.
 MAIL_SERVER=CHANGE_ME
-MAIL_PORT=587
+MAIL_PORT=25
+MAIL_USE_TLS=false
+MAIL_USE_SSL=false
+#MAIL_USERNAME=CHANGE_ME
+#MAIL_PASSWORD=CHANGE_ME
 MAIL_FROM_NAME=IDPortal
 MAIL_FROM_ADDRESS=CHANGE_ME
 MAIL_DEFAULT_RECIP=CHANGE_ME
@@ -307,7 +320,7 @@ backup_db() {
     info "Dumping database to ${backup_file}..."
     local db_user db_name
     db_user=$(env_get "POSTGRES_USER")
-    db_name=$(env_get "POSTGRES_DBNAME")
+    db_name=$(env_get "POSTGRES_DB")
 
     if docker exec "$CTR_DB" pg_dump -U "$db_user" "$db_name" 2>/dev/null \
             | gzip > "$backup_file"; then
@@ -406,7 +419,7 @@ verify() {
 bootstrap_first_admin() {
     local db_user db_name
     db_user=$(env_get "POSTGRES_USER")
-    db_name=$(env_get "POSTGRES_DBNAME")
+    db_name=$(env_get "POSTGRES_DB")
 
     local count
     count=$(docker exec "$CTR_DB" psql -U "$db_user" -d "$db_name" \

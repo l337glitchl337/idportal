@@ -1,4 +1,4 @@
-from flask import request, flash
+from flask import request
 from factories import get_logger
 from ldap.filter import escape_filter_chars
 import json

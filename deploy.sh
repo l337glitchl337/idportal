@@ -187,8 +187,17 @@ COMPANY_CURRENT_YEAR=$(date +%Y)
 COMPANY_EMAIL_SIGNATURE=CHANGE_ME
 
 # ─── Email (SMTP) ─────────────────────────────────────────────────────────────
+# For an unauthenticated internal relay (port 25): leave MAIL_USE_TLS=false
+#   and comment out MAIL_USERNAME / MAIL_PASSWORD.
+# For authenticated SMTP (e.g. port 587 STARTTLS): set MAIL_USE_TLS=true
+#   and fill in MAIL_USERNAME / MAIL_PASSWORD.
+# For SSL/TLS-only (port 465): set MAIL_USE_SSL=true instead.
 MAIL_SERVER=CHANGE_ME
-MAIL_PORT=587
+MAIL_PORT=25
+MAIL_USE_TLS=false
+MAIL_USE_SSL=false
+#MAIL_USERNAME=CHANGE_ME
+#MAIL_PASSWORD=CHANGE_ME
 MAIL_FROM_NAME=IDPortal
 MAIL_FROM_ADDRESS=CHANGE_ME
 MAIL_DEFAULT_RECIP=CHANGE_ME

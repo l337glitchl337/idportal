@@ -15,22 +15,20 @@ def login():
         return redirect(url_for("user.home"))
     ldap_service = current_app.ldap_service
     auth_service = current_app.auth_service
-    if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
+    email = request.form.get("email")
+    password = request.form.get("password")
 
-        message, attrs, result = ldap_service.auth_user(email, password)
+    message, attrs, result = ldap_service.auth_user(email, password)
 
-        if result:
-            auth_service.set_session_attrs(attrs)
-            return redirect(url_for('user.landing'))
+    if result:
+        auth_service.set_session_attrs(attrs)
+        return redirect(url_for('user.landing'))
+    else:
+        if not message:
+            flash("Error: Please check email/password", "danger")
         else:
-            if not message:
-                flash("Error: Please check email/password", "danger")
-            else:
-                flash(message, "info")
-        
-            return redirect(url_for("user.home"))
+            flash(message, "info")
+        return redirect(url_for("user.home"))
 
 @user_blueprint.route("/landing", methods=["GET"])
 @DecoratorHelper.check_login
@@ -64,12 +62,16 @@ def upload_photo():
             photo.save(os.path.join(current_app.config["UPLOAD_FOLDER"], pfn))
             drivers_license.save(os.path.join(current_app.config["UPLOAD_FOLDER"], lfn))
 
-            if(submission_service.create_submission(pfn, lfn)):
+            if submission_service.create_submission(pfn, lfn):
                 flash("Documents uploaded successfully!", "success")
                 flash("You will receive an email once your ID is ready!", "success")
-
                 email_service.send_email_alert()
                 return redirect(url_for("admin.logout"))
             else:
+                for fp in (pfn, lfn):
+                    try:
+                        os.remove(os.path.join(current_app.config["UPLOAD_FOLDER"], fp))
+                    except OSError:
+                        pass
                 flash("An error has occurred, please try again later", "danger")
                 return redirect(url_for("admin.logout"))

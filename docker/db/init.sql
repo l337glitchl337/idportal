@@ -255,28 +255,6 @@ ALTER TABLE ONLY public.bfa
     ADD CONSTRAINT bfa_pkey PRIMARY KEY (id);
 
 
---
--- Name: admins email_contraint; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.admins
-    ADD CONSTRAINT email_contraint UNIQUE (email);
-
-
---
--- Name: submissions submissions_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.submissions
-    ADD CONSTRAINT submissions_email_key UNIQUE (email);
-
-
---
--- Name: submissions submissions_id_number_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.submissions
-    ADD CONSTRAINT submissions_id_number_key UNIQUE (id_number);
 
 
 --
@@ -287,12 +265,6 @@ ALTER TABLE ONLY public.submissions
     ADD CONSTRAINT submissions_pkey PRIMARY KEY (request_id);
 
 
---
--- Name: admins username_contraint; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.admins
-    ADD CONSTRAINT username_contraint UNIQUE (username);
 
 
 --
@@ -433,8 +405,4 @@ GRANT USAGE ON SEQUENCE public.submissions_request_id_seq TO idportal;
 -- PostgreSQL database dump complete
 --
 
---
--- Create default admin account
---
-INSERT INTO public.admins (first_name, last_name, username, password, email, status, on_login, role) VALUES ('Admin', 'Account', 'admin', '$2b$12$RrvdG7OilbQVI7WJaNHMKOWzZfxgsuCAuwyA9XkwqKeoI1UeOiX9e', 'admin@email.com', 1, 1, 'super');
 

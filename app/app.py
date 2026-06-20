@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, render_template
+from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 from datetime import timedelta
 from services import Database, AdminService, EmailService, LDAPService, SubmissionService, AuthService
@@ -108,6 +109,16 @@ def create_app():
     @app.context_processor
     def inject_csrf():
         return {"csrf_token": generate_csrf_token}
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template("404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        return render_template("500.html"), 500
 
     app.json.sort_keys = False
     app.db = Database(app)

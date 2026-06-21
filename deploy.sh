@@ -197,6 +197,18 @@ MAIL_USE_SSL=false
 MAIL_FROM_NAME=IDPortal Test
 MAIL_FROM_ADDRESS=noreply@test.local
 MAIL_DEFAULT_RECIP=admin@test.local
+
+# ─── Authentication modes ─────────────────────────────────────────────────────
+ADMIN_AUTH_MODE=local
+USER_AUTH_MODE=ldap
+
+# ─── Microsoft Entra OAuth (optional) ────────────────────────────────────────
+# Fill these in to enable the "Sign in with Microsoft" button.
+# Set ADMIN_AUTH_MODE=entra (or both) to use it for admins.
+# Set USER_AUTH_MODE=entra (or both) to use it for end users.
+ENTRA_CLIENT_ID=
+ENTRA_CLIENT_SECRET=
+ENTRA_TENANT_ID=
 EOF
         ok "$ENV_FILE created for test stack"
     else

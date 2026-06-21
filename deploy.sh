@@ -267,6 +267,14 @@ MAIL_USE_SSL=false
 MAIL_FROM_NAME=IDPortal
 MAIL_FROM_ADDRESS=CHANGE_ME
 MAIL_DEFAULT_RECIP=CHANGE_ME
+
+# ─── Microsoft Entra OAuth (optional) ────────────────────────────────────────
+# Leave blank to disable the "Sign in with Microsoft" button.
+# Register an app in Entra, add https://yourdomain/oauth/callback as a
+# redirect URI, and paste the values below.
+ENTRA_CLIENT_ID=
+ENTRA_CLIENT_SECRET=
+ENTRA_TENANT_ID=
 EOF
 
         ok "$ENV_FILE created with generated secrets"

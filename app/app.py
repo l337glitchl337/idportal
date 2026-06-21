@@ -3,7 +3,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 from datetime import timedelta
 from services import Database, AdminService, EmailService, LDAPService, SubmissionService, AuthService
-from routes import admin_blueprint, user_blueprint
+from routes import admin_blueprint, user_blueprint, auth_blueprint, init_oauth
 from helpers import generate_csrf_token, validate_csrf
 import os
 
@@ -79,6 +79,11 @@ def create_app():
     app.config["COMPANY_CURRENT_YEAR"]    = os.environ.get("COMPANY_CURRENT_YEAR")
     app.config["COMPANY_EMAIL_SIGNATURE"] = os.environ.get("COMPANY_EMAIL_SIGNATURE")
 
+    # ── Entra OAuth (optional — leave unset to disable Microsoft sign-in) ────
+    app.config["ENTRA_CLIENT_ID"]     = os.environ.get("ENTRA_CLIENT_ID")
+    app.config["ENTRA_CLIENT_SECRET"] = os.environ.get("ENTRA_CLIENT_SECRET")
+    app.config["ENTRA_TENANT_ID"]     = os.environ.get("ENTRA_TENANT_ID")
+
     # ── Instance config overrides (dev/instance/config.py in development) ─────
     app.config.from_pyfile("config.py", silent=True)
 
@@ -87,10 +92,13 @@ def create_app():
 
     app.register_blueprint(admin_blueprint, url_prefix="/")
     app.register_blueprint(user_blueprint, url_prefix="/")
+    app.register_blueprint(auth_blueprint, url_prefix="/")
+    init_oauth(app)
 
     @app.context_processor
     def inject():
         return {
+            "entra_enabled"           : bool(app.config.get("ENTRA_CLIENT_ID")),
             "SITE_TITLE"              : app.config["SITE_TITLE"],
             "LOGO"                    : app.config["LOGO"],
             "COMPANY_NAME"            : app.config["COMPANY_NAME"],

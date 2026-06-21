@@ -121,6 +121,50 @@ class AuthService:
             self.logger.error(f"Could not set session attributes for user: {attrs.get('Email', 'unknown')}")
             return False
         
+    def entra_admin_login(self, userinfo: dict) -> bool:
+        email = userinfo.get('email') or userinfo.get('preferred_username', '')
+        self.logger.info(f"Entra admin login attempt for: {email}")
+
+        row = self.db.execute_query(
+            """SELECT first_name, last_name, username, email, status, role, on_login, id
+               FROM admins WHERE LOWER(email) = LOWER(%s)""",
+            (email,), fetch_one=True
+        )
+        if not row:
+            self.logger.warning(f"Entra login blocked — no admin account for: {email}")
+            flash("Your account has not been provisioned. Contact a super admin.", "danger")
+            return False
+
+        if row[4] != 1:
+            self.logger.warning(f"Entra login blocked — account disabled for: {email}")
+            flash("Your account is disabled. Contact a super admin.", "danger")
+            return False
+
+        session.clear()
+        session.permanent = True
+        session["first_name"]     = row[0]
+        session["last_name"]      = row[1]
+        session["admin_username"] = row[2]
+        session["email"]          = row[3]
+        session["role"]           = row[5]
+        session["on_login"]       = 0
+        session["user_id"]        = row[7]
+        self.logger.info(f"Entra admin login successful for: {email}")
+        return True
+
+    def entra_user_login(self, userinfo: dict) -> bool:
+        email = userinfo.get('email') or userinfo.get('preferred_username', '')
+        given_name  = userinfo.get('given_name', '')
+        family_name = userinfo.get('family_name', '')
+        attrs = {
+            'First Name': given_name,
+            'Last Name':  family_name,
+            'Email':      email,
+            'cn':         userinfo.get('preferred_username', email),
+        }
+        self.logger.info(f"Entra user login for: {email}")
+        return self.set_session_attrs(attrs)
+
     def check_bfa(self, email, ip_address, failed) -> bool:
         row = self.db.execute_query("select * from bfa where email=%s", (email,), fetch_one=True)
         if row:

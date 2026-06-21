@@ -67,6 +67,8 @@ class LDAPService:
             if not dn:
                 return None, None, False
 
+            if not password:
+                return None, None, False
             conn = None
             try:
                 conn = ldap.initialize(self.ldap_server)

@@ -122,15 +122,20 @@ def test_get_admin_panel_search_no_results(app, admin_client):
 # ── POST /logout ──────────────────────────────────────────────────────────────
 
 def test_logout_admin_clears_session(admin_client):
-    resp = admin_client.get('/logout')
+    resp = admin_client.post('/logout')
     assert resp.status_code == 302
     assert '/admin' in resp.headers['Location']
+
+
+def test_logout_get_not_allowed(client):
+    resp = client.get('/logout')
+    assert resp.status_code == 405
 
 
 def test_logout_user_redirects_home(client):
     with client.session_transaction() as sess:
         sess['user_logged_in'] = True
-    resp = client.get('/logout')
+    resp = client.post('/logout')
     assert resp.status_code == 302
 
 

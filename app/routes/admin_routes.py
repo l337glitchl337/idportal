@@ -114,7 +114,7 @@ def create_admin_account():
         flash("Failed to create admin account. Please check logs for more details", "danger")
     return redirect(url_for("admin.admin_panel", active_tab="admins"))
 
-@admin_blueprint.route("/logout")
+@admin_blueprint.route("/logout", methods=["POST"])
 def logout():
     user_type = 0
     if "admin_username" in session:

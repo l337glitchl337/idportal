@@ -160,6 +160,9 @@ class AuthService:
 
     def entra_user_login(self, userinfo: dict) -> bool:
         email = userinfo.get('email') or userinfo.get('preferred_username', '')
+        if not email:
+            self.logger.warning("Entra user login rejected: no email in userinfo")
+            return False
         given_name  = userinfo.get('given_name', '')
         family_name = userinfo.get('family_name', '')
         attrs = {
@@ -167,6 +170,8 @@ class AuthService:
             'Last Name':  family_name,
             'Email':      email,
             'cn':         userinfo.get('preferred_username', email),
+            'ID Number':  '',
+            'Location':   '',
         }
         self.logger.info(f"Entra user login for: {email}")
         return self.set_session_attrs(attrs)

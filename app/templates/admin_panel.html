@@ -33,7 +33,10 @@
       <a class="nav-link {% if active_tab == 'search' %}active{% endif %}" href="{{ url_for('admin.admin_panel', active_tab='search') }}">Search</a>
     </li>
     <li class="nav-item">
-      <a href="/logout" class="btn btn-danger" role="button">Log out</a>
+      <form method="POST" action="/logout" class="d-inline">
+        {{ csrf_field() }}
+        <button type="submit" class="btn btn-danger">Log out</button>
+      </form>
     </li>
   </ul>
 

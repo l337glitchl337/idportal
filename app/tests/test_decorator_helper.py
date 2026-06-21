@@ -110,4 +110,4 @@ def test_check_first_login_redirects_when_on_login_one(client):
         sess['on_login'] = 1
     resp = client.get('/first-login-check')
     assert resp.status_code == 302
-    assert '/admin-login' in resp.headers['Location']
+    assert '/change_admin_password' in resp.headers['Location']

@@ -368,9 +368,9 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
         ${entraEnabled ? `<div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-          ${entraOnly ? 'This admin will sign in with their Microsoft account.' : 'This admin can sign in with Microsoft or their local credentials.'}
+          ${entraOnly ? 'This admin will sign in with their Microsoft account. Name will be populated on first login.' : 'This admin can sign in with Microsoft or their local credentials.'}
         </div>` : ''}
-        <div class="mb-3">
+        ${entraOnly ? '' : `<div class="mb-3">
           <label for="firstName" class="form-label">First Name</label>
           <input type="text" class="form-control" id="firstName" name="first_name" required>
         </div>
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <label for="lastName" class="form-label">Last Name</label>
           <input type="text" class="form-control" id="lastName" name="last_name" required>
         </div>
-        ${entraOnly ? '' : `<div class="mb-3">
+        <div class="mb-3">
           <label for="username" class="form-label">Username</label>
           <input type="text" class="form-control" id="username" name="username" required>
         </div>`}

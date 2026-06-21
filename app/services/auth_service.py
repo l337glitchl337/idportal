@@ -140,10 +140,18 @@ class AuthService:
             flash("Your account is disabled. Contact a super admin.", "danger")
             return False
 
+        given_name  = userinfo.get('given_name') or userinfo.get('name', '').split()[0]
+        family_name = userinfo.get('family_name', '')
+        if given_name or family_name:
+            self.db.execute_query(
+                "UPDATE admins SET first_name=%s, last_name=%s WHERE id=%s",
+                (given_name or row[0], family_name or row[1], row[7])
+            )
+
         session.clear()
         session.permanent = True
-        session["first_name"]     = row[0]
-        session["last_name"]      = row[1]
+        session["first_name"]     = given_name  or row[0]
+        session["last_name"]      = family_name or row[1]
         session["admin_username"] = row[2]
         session["email"]          = row[3]
         session["role"]           = row[5]

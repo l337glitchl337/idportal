@@ -61,26 +61,27 @@ def create_admin_account():
         return redirect(url_for("admin.admin_panel", active_tab="admins"))
     admin_service = current_app.admin_service
     email_service = current_app.email_service
-    first_name = request.form.get("first_name", "").strip()
-    last_name = request.form.get("last_name", "").strip()
     email = request.form.get("email", "").strip()
     role = request.form.get("role", "").strip()
 
     entra_only = current_app.config["ADMIN_AUTH_MODE"] == "entra"
     if entra_only:
+        first_name = "Pending"
+        last_name = ""
         username = re.sub(r'[^A-Za-z0-9_]', '', email.split('@')[0])[:20] or "admin"
     else:
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
         username = request.form.get("username", "").strip()
-
-    if not _NAME_RE.match(first_name):
-        flash("First name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if not _NAME_RE.match(last_name):
-        flash("Last name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if not entra_only and not _USERNAME_RE.match(username):
-        flash("Username must be 3–20 alphanumeric characters or underscores.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
+        if not _NAME_RE.match(first_name):
+            flash("First name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
+            return redirect(url_for("admin.admin_panel", active_tab="admins"))
+        if not _NAME_RE.match(last_name):
+            flash("Last name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
+            return redirect(url_for("admin.admin_panel", active_tab="admins"))
+        if not _USERNAME_RE.match(username):
+            flash("Username must be 3–20 alphanumeric characters or underscores.", "danger")
+            return redirect(url_for("admin.admin_panel", active_tab="admins"))
     if not _EMAIL_RE.match(email):
         flash("Invalid email address.", "danger")
         return redirect(url_for("admin.admin_panel", active_tab="admins"))

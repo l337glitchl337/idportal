@@ -149,6 +149,33 @@ docker/nginx/certs/key.pem
 
 The deploy script verifies the certificate on every run and will not start if it is missing or expired.
 
+### Updating production
+
+To apply code or dependency updates to an existing production installation:
+
+```bash
+bash deploy.sh --update
+```
+
+The script will:
+
+1. Check whether your local branch is behind origin and offer to run `git pull`
+2. Take a compressed database backup to `backups/` before touching anything
+3. Rebuild the Docker images with the latest code and packages
+4. Restart the containers
+
+Backups are retained automatically — the 10 most recent are kept and older ones are removed.
+
+If the backup fails the script will warn you and ask for confirmation before continuing. Do not skip this unless you have another backup strategy in place.
+
+To start completely fresh (wipe all data and reconfigure):
+
+```bash
+docker compose down -v   # stops containers and deletes volumes
+rm .env                  # remove existing config
+bash deploy.sh           # runs as a fresh install
+```
+
 ### First admin account
 
 On first deploy the script detects no admin accounts and prompts you to create the initial super admin. A one-time password reset link is printed — open it to set the password. Subsequent deploys skip this step.

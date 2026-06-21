@@ -428,13 +428,20 @@ bootstrap_first_admin() {
     [[ "$count" == "0" ]] || { ok "Admin accounts already exist — skipping bootstrap"; return; }
 
     step "First admin account setup"
-    echo "  No admin accounts found. Set up your first super admin now."
-    echo
-    read -rp "  First name : " fn
-    read -rp "  Last name  : " ln
-    read -rp "  Username   : " un
-    read -rp "  Email      : " em
-    echo
+    local fn ln un em
+    if $TEST_MODE; then
+        fn="Test"; ln="Admin"; un="testadmin"; em="admin@test.local"
+        echo "  Test mode: creating default super admin (testadmin / admin@test.local)"
+        echo
+    else
+        echo "  No admin accounts found. Set up your first super admin now."
+        echo
+        read -rp "  First name : " fn
+        read -rp "  Last name  : " ln
+        read -rp "  Username   : " un
+        read -rp "  Email      : " em
+        echo
+    fi
 
     # Generate hashed password + setup token inside the Flask container
     # (bcrypt and hashlib are available there; avoids host dependency)

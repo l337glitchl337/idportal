@@ -439,7 +439,7 @@ bootstrap_first_admin() {
     # Generate hashed password + setup token inside the Flask container
     # (bcrypt and hashlib are available there; avoids host dependency)
     local creds
-    creds=$(docker exec "$CTR_FLASK" python3 - <<'PYEOF'
+    creds=$(docker exec -i "$CTR_FLASK" python3 - <<'PYEOF'
 import bcrypt, secrets, hashlib, uuid
 pw = secrets.token_urlsafe(32).encode()
 hashed = bcrypt.hashpw(pw, bcrypt.gensalt()).decode()

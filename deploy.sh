@@ -463,7 +463,7 @@ PYEOF
     user_id=$(docker exec "$CTR_DB" psql -U "$db_user" -d "$db_name" -tAc \
         "INSERT INTO admins (first_name, last_name, username, email, role, password)
          VALUES ('${fn_e}', '${ln_e}', '${un_e}', '${em_e}', 'super', '${pw_e}')
-         RETURNING id;" | tr -d '[:space:]')
+         RETURNING id;" | head -1 | tr -d '[:space:]')
 
     # Insert 24-hour setup token
     docker exec "$CTR_DB" psql -U "$db_user" -d "$db_name" -c \

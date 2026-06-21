@@ -27,7 +27,7 @@ The test stack runs the full application locally with OpenLDAP, MailHog, and a s
 ```bash
 git clone https://github.com/l337glitchl337/idportal.git
 cd idportal
-bash deploy.sh --test
+./deploy.sh --test
 ```
 
 The script will:
@@ -68,7 +68,7 @@ Pull the latest code and redeploy:
 
 ```bash
 git pull
-bash deploy.sh --update
+./deploy.sh --update
 ```
 
 ---
@@ -78,10 +78,10 @@ bash deploy.sh --update
 ```bash
 git clone https://github.com/l337glitchl337/idportal.git
 cd idportal
-bash deploy.sh
+./deploy.sh
 ```
 
-On first run the script creates a `.env` template and exits. Fill in every `CHANGE_ME` value, then run `bash deploy.sh` again.
+On first run the script creates a `.env` template and exits. Fill in every `CHANGE_ME` value, then run `./deploy.sh` again to continue.
 
 ### Required environment variables
 
@@ -154,7 +154,7 @@ The deploy script verifies the certificate on every run and will not start if it
 To apply code or dependency updates to an existing production installation:
 
 ```bash
-bash deploy.sh --update
+./deploy.sh --update
 ```
 
 The script will:
@@ -173,7 +173,7 @@ To start completely fresh (wipe all data and reconfigure):
 ```bash
 docker compose down -v   # stops containers and deletes volumes
 rm .env                  # remove existing config
-bash deploy.sh           # runs as a fresh install
+./deploy.sh           # runs as a fresh install
 ```
 
 ### First admin account

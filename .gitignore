@@ -1,4 +1,5 @@
 .env
+CLAUDE.md
 old.init.sql
 docker/nginx/certs/**
 !docker/nginx/certs

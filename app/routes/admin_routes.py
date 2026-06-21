@@ -12,6 +12,32 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 admin_blueprint = Blueprint("admin", __name__)
 
+
+def _validate_admin_form(first_name, last_name, username, email, role, validate_names=True):
+    if validate_names:
+        if not _NAME_RE.match(first_name):
+            return "First name must be 1–50 letters, spaces, hyphens, or apostrophes."
+        if not _NAME_RE.match(last_name):
+            return "Last name must be 1–50 letters, spaces, hyphens, or apostrophes."
+        if not _USERNAME_RE.match(username):
+            return "Username must be 3–20 alphanumeric characters or underscores."
+    if not _EMAIL_RE.match(email):
+        return "Invalid email address."
+    if role not in _VALID_ROLES:
+        return "Invalid role selected."
+    return None
+
+
+def _parse_user_id(raw):
+    try:
+        return int(raw), None
+    except (TypeError, ValueError):
+        return None, "Invalid user ID."
+
+
+def _json(success, message, **extra):
+    return {"success": success, "message": message, **extra}
+
 @admin_blueprint.route("/admin", methods = ["POST", "GET"])
 def admin():
     if request.method == "POST":
@@ -73,20 +99,9 @@ def create_admin_account():
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
         username = request.form.get("username", "").strip()
-        if not _NAME_RE.match(first_name):
-            flash("First name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
-            return redirect(url_for("admin.admin_panel", active_tab="admins"))
-        if not _NAME_RE.match(last_name):
-            flash("Last name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
-            return redirect(url_for("admin.admin_panel", active_tab="admins"))
-        if not _USERNAME_RE.match(username):
-            flash("Username must be 3–20 alphanumeric characters or underscores.", "danger")
-            return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if not _EMAIL_RE.match(email):
-        flash("Invalid email address.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if role not in _VALID_ROLES:
-        flash("Invalid role selected.", "danger")
+    error = _validate_admin_form(first_name, last_name, username, email, role, validate_names=not entra_only)
+    if error:
+        flash(error, "danger")
         return redirect(url_for("admin.admin_panel", active_tab="admins"))
 
     if admin_service.create_admin(first_name, last_name, username, email, role):
@@ -127,11 +142,10 @@ def reject_submission():
     request_id = request.form.get("request_id")
     comments = request.form.get("comments", "")
     if len(comments) > _MAX_COMMENT_LEN:
-        return {"success": False, "message": f"Comments must be {_MAX_COMMENT_LEN} characters or fewer."}
+        return _json(False, f"Comments must be {_MAX_COMMENT_LEN} characters or fewer.")
     if submission_service.reject_request(request_id, comments, actor=session.get("admin_username")):
-        return {"success": True, "message": "Submission rejected successfully!"}
-    else:
-        return {"success": False, "message": "Failed to reject submission. Please check logs for more details"}
+        return _json(True, "Submission rejected successfully!")
+    return _json(False, "Failed to reject submission. Please check logs for more details")
 
 @admin_blueprint.route("/approve_submission", methods=["POST"])
 @DecoratorHelper.check_admin_login
@@ -140,9 +154,8 @@ def approve_submission():
     submission_service = current_app.submission_service
     request_id = request.form.get("request_id")
     if submission_service.approve_request(request_id, actor=session.get("admin_username")):
-        return {"success": True, "message": "Submission approved successfully!"}
-    else:
-        return {"success": False, "message": "Failed to approve submission. Please check logs for more details"}
+        return _json(True, "Submission approved successfully!")
+    return _json(False, "Failed to approve submission. Please check logs for more details")
     
 @admin_blueprint.route("/change_admin_password", methods=["POST", "GET"])
 @DecoratorHelper.check_admin_login
@@ -228,17 +241,17 @@ def batch_edit():
             if not submission_service.approve_request(request_id, actor=actor):
                 errors[request_id] = "Failed to approve request"
         if errors:
-            return {"success": False, "message": "Failed to approve one or more requests", "errors": errors}
-        return {"success": True, "message": "All submissions approved successfully!"}
+            return _json(False, "Failed to approve one or more requests", errors=errors)
+        return _json(True, "All submissions approved successfully!")
     elif action == "reject":
         if len(comments) > _MAX_COMMENT_LEN:
-            return {"success": False, "message": f"Comments must be {_MAX_COMMENT_LEN} characters or fewer."}
+            return _json(False, f"Comments must be {_MAX_COMMENT_LEN} characters or fewer.")
         for request_id in request_ids:
             if not submission_service.reject_request(request_id, comments, actor=actor):
                 errors[request_id] = "Failed to reject request"
         if errors:
-            return {"success": False, "message": "Failed to reject one or more requests", "errors": errors}
-        return {"success": True, "message": "All submissions rejected successfully!"}
+            return _json(False, "Failed to reject one or more requests", errors=errors)
+        return _json(True, "All submissions rejected successfully!")
     else:
         flash("Invalid action selected", "danger")
         return redirect(url_for("admin.admin_panel"))
@@ -259,26 +272,14 @@ def edit_admin_account():
     email = request.form.get("email", "").strip()
     role = request.form.get("role", "").strip()
 
-    try:
-        user_id_int = int(user_id)
-    except (TypeError, ValueError):
-        flash("Invalid user ID.", "danger")
+    user_id_int, id_error = _parse_user_id(user_id)
+    if id_error:
+        flash(id_error, "danger")
         return redirect(url_for("admin.admin_panel", active_tab="admins"))
 
-    if not _NAME_RE.match(first_name):
-        flash("First name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if not _NAME_RE.match(last_name):
-        flash("Last name must be 1–50 letters, spaces, hyphens, or apostrophes.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if not _USERNAME_RE.match(username):
-        flash("Username must be 3–20 alphanumeric characters or underscores.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if not _EMAIL_RE.match(email):
-        flash("Invalid email address.", "danger")
-        return redirect(url_for("admin.admin_panel", active_tab="admins"))
-    if role not in _VALID_ROLES:
-        flash("Invalid role selected.", "danger")
+    error = _validate_admin_form(first_name, last_name, username, email, role)
+    if error:
+        flash(error, "danger")
         return redirect(url_for("admin.admin_panel", active_tab="admins"))
 
     if user_id_int == session["user_id"]:
@@ -298,20 +299,18 @@ def edit_admin_account():
 def delete_admin_account():
     admin_service = current_app.admin_service
     if session["role"] != "super":
-        return {"success": False, "message": "You do not have permission to delete admin accounts"}
+        return _json(False, "You do not have permission to delete admin accounts")
 
     user_id = request.form.get("user_id", "")
-    try:
-        user_id_int = int(user_id)
-    except (TypeError, ValueError):
-        return {"success": False, "message": "Invalid user ID."}
+    user_id_int, id_error = _parse_user_id(user_id)
+    if id_error:
+        return _json(False, id_error)
     if user_id_int == session["user_id"]:
-        return {"success": False, "message": "You cannot delete your own account"}
+        return _json(False, "You cannot delete your own account")
 
     if admin_service.delete_admin(user_id):
-        return {"success": True, "message": "Admin account deleted successfully!"}
-    else:
-        return {"success": False, "message": "Failed to delete admin account. Please check logs for more details"}
+        return _json(True, "Admin account deleted successfully!")
+    return _json(False, "Failed to delete admin account. Please check logs for more details")
     
 @admin_blueprint.route("/search_submissions", methods=["POST"])
 @DecoratorHelper.check_admin_login
@@ -329,9 +328,8 @@ def delete_submission():
         request_id = request.form.get("request_id")
         submission_service = current_app.submission_service
         if submission_service.delete(request_id, actor=session.get("admin_username")):
-            return {"success": True, "message": f"Deleted submission with id: {request_id} succesfully", "errors": None}
-        else:
-            return {"success": False, "message": f"Failed to delete submission id: {request_id}", "errors": "err"}
+            return _json(True, f"Deleted submission with id: {request_id} succesfully", errors=None)
+        return _json(False, f"Failed to delete submission id: {request_id}", errors="err")
 
 @admin_blueprint.route("/uploads/<path:filename>")
 @DecoratorHelper.check_admin_login

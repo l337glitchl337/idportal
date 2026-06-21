@@ -12,6 +12,18 @@ class EmailService:
         self.logger = get_logger("email_service")
         self.logger.info("EmailService initialized")
 
+    def _send(self, subject, recipients, template, **ctx) -> bool:
+        html_body = render_template(template, **ctx)
+        msg = Message(subject=subject, recipients=recipients, html=html_body)
+        try:
+            with self.mail.connect() as conn:
+                conn.send(msg)
+        except Exception:
+            self.logger.exception(f"Error sending '{subject}' to {recipients}")
+            return False
+        self.logger.info(f"Sent '{subject}' to {recipients}")
+        return True
+
     def send_email_alert(self) -> bool:
         messages = []
         request_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -66,35 +78,11 @@ class EmailService:
         if not result:
             self.logger.error(f"Could not insert setup token for new admin {username}.")
             return False
-        html_body = render_template('email/admin_welcome.html',
-                                    username=username,
-                                    first_name=first_name,
-                                    url=url)
-        msg = Message(subject="Welcome to IDPortal!",
-                    recipients=[email],
-                    html=html_body)
-        try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
-        except Exception:
-            self.logger.exception("Error occurred while trying to send the welcome email!")
-            return False
-        self.logger.info(f"Succesfully sent welcome email to {email}")
-        return True
+        return self._send("Welcome to IDPortal!", [email], 'email/admin_welcome.html',
+                          username=username, first_name=first_name, url=url)
     
     def send_entra_welcome_email(self, first_name, email) -> bool:
-        html_body = render_template('email/admin_welcome_entra.html', first_name=first_name)
-        msg = Message(subject="Welcome to IDPortal!",
-                      recipients=[email],
-                      html=html_body)
-        try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
-        except Exception:
-            self.logger.exception("Error sending Entra welcome email!")
-            return False
-        self.logger.info(f"Sent Entra welcome email to {email}")
-        return True
+        return self._send("Welcome to IDPortal!", [email], 'email/admin_welcome_entra.html', first_name=first_name)
 
     def send_forgot_password_email(self, **kwargs) -> bool:
         auth_service = self.app.auth_service
@@ -118,21 +106,8 @@ class EmailService:
         if not result:
             return False
 
-        html_body = render_template('email/forgot_password.html',
-                                    full_name=full_name,
-                                    username=username,
-                                    url=url)
-        msg = Message(subject="Forgot Password Request",
-                        recipients=[email],
-                        html=html_body)
-        try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
-        except Exception:
-            self.logger.exception("Error occured while trying to send forgot password email!")
-            return False
-        self.logger.info(f"Succesfully sent forgot password email to {kwargs}")
-        return True
+        return self._send("Forgot Password Request", [email], 'email/forgot_password.html',
+                          full_name=full_name, username=username, url=url)
     
     def send_approved_email(self, request_id) -> bool:
         row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
@@ -143,17 +118,8 @@ class EmailService:
         name = row[0]
         email = row[1]
 
-        html_body = render_template("email/approved_submission.html", student_name=name)
-        msg = Message(subject="Your ID submission has been approved!", recipients=[email], html=html_body)
-
-        try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
-        except Exception:
-            self.logger.exception("An email error has occurred!")
-            return False
-        self.logger.info(f"Submission notification succesfully sent to {email}")
-        return True
+        return self._send("Your ID submission has been approved!", [email],
+                          "email/approved_submission.html", student_name=name)
     
     def send_rejection_email(self, request_id, comments):
         row = self.db.execute_query("select first_name || ' ' || last_name, email from submissions where request_id=%s", (request_id,), fetch_one=True)
@@ -164,14 +130,5 @@ class EmailService:
         name = row[0]
         email = row[1]
 
-        html_body = render_template("email/reject_submission.html", student_name=name, REJECTION_COMMENTS=comments)
-        msg = Message(subject="Your ID submission has been rejected!", recipients=[email], html=html_body)
-
-        try:
-            with self.mail.connect() as conn:
-                conn.send(msg)
-        except Exception:
-            self.logger.exception("An email error has occurred!")
-            return False
-        self.logger.info(f"Submission notification succesfully sent to {email}")
-        return True
+        return self._send("Your ID submission has been rejected!", [email],
+                          "email/reject_submission.html", student_name=name, REJECTION_COMMENTS=comments)

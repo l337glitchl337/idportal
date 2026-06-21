@@ -554,6 +554,19 @@ PYEOF
     warn "Save this link — it will not be shown again."
 }
 
+# ─── Sync test URLs to current HTTPS_PORT ─────────────────────────────────────
+sync_test_urls() {
+    $TEST_MODE || return 0
+    local port
+    port=$(env_get "HTTPS_PORT" 2>/dev/null || echo "8443")
+    sed -i \
+        -e "s|USER_LOGIN_URL=https://localhost:[0-9]*|USER_LOGIN_URL=https://localhost:${port}|" \
+        -e "s|FORGOT_PASSWORD_URL=https://localhost:[0-9]*/forgot_password|FORGOT_PASSWORD_URL=https://localhost:${port}/forgot_password|" \
+        -e "s|REVIEW_REQUEST_URL=https://localhost:[0-9]*/admin_panel|REVIEW_REQUEST_URL=https://localhost:${port}/admin_panel|" \
+        -e "s|ADMIN_URL=https://localhost:[0-9]*/admin|ADMIN_URL=https://localhost:${port}/admin|" \
+        "$ENV_FILE"
+}
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 print_summary() {
     local cf_flag=""
@@ -610,10 +623,12 @@ main() {
 
     if [[ "$MODE" == "fresh" ]]; then
         setup_env       # exits after writing .env stub if it didn't exist
+        sync_test_urls
         validate_env
         setup_certs
     else
         check_git_status
+        sync_test_urls
         validate_env
         setup_certs
         backup_db

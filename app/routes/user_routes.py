@@ -43,7 +43,7 @@ def landing():
 def upload_form():
     return render_template("upload_photo.html")
     
-@user_blueprint.route("/upload_photo", methods = ["GET", "POST"])
+@user_blueprint.route("/upload_photo", methods=["POST"])
 @DecoratorHelper.check_login
 def upload_photo():
     submission_service = current_app.submission_service
@@ -61,7 +61,6 @@ def upload_photo():
             pfn = UtilityHelper.generate_unique_filename(photo.filename)
             lfn = UtilityHelper.generate_unique_filename(drivers_license.filename)
 
-
             photo.save(os.path.join(current_app.config["UPLOAD_FOLDER"], pfn))
             drivers_license.save(os.path.join(current_app.config["UPLOAD_FOLDER"], lfn))
 
@@ -69,7 +68,6 @@ def upload_photo():
                 flash("Documents uploaded successfully!", "success")
                 flash("You will receive an email once your ID is ready!", "success")
                 email_service.send_email_alert()
-                return redirect(url_for("admin.logout"))
             else:
                 for fp in (pfn, lfn):
                     try:
@@ -77,4 +75,7 @@ def upload_photo():
                     except OSError:
                         pass
                 flash("An error has occurred, please try again later", "danger")
-                return redirect(url_for("admin.logout"))
+    flashes = session.get('_flashes', [])
+    session.clear()
+    session['_flashes'] = flashes
+    return redirect(url_for("user.home"))

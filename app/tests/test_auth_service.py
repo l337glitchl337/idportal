@@ -243,6 +243,20 @@ def test_entra_user_login_sets_session(app, svc):
     assert result is True
 
 
+def test_entra_user_login_includes_id_number_and_location(app, svc):
+    userinfo = {'email': 'u@example.com', 'given_name': 'Jane', 'family_name': 'Doe'}
+    with app.test_request_context('/'):
+        svc.entra_user_login(userinfo)
+        assert session.get('ID Number') == ''
+        assert session.get('Location') == ''
+
+
+def test_entra_user_login_empty_email_rejected(app, svc):
+    with app.test_request_context('/'):
+        result = svc.entra_user_login({})
+    assert result is False
+
+
 # ── check_bfa ────────────────────────────────────────────────────────────────
 
 def test_check_bfa_no_record_success_allowed(svc, db):

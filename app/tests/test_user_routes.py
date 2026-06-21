@@ -126,6 +126,11 @@ def _make_upload(filename, content):
     return (io.BytesIO(content), filename)
 
 
+def test_upload_photo_get_not_allowed(client):
+    resp = client.get('/upload_photo')
+    assert resp.status_code == 405
+
+
 def test_upload_photo_requires_login(client):
     resp = client.post('/upload_photo')
     assert resp.status_code == 302

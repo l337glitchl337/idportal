@@ -28,6 +28,14 @@ def oauth_login():
         return redirect(url_for('admin.admin') if flow == 'admin' else url_for('user.home'))
 
     flow = request.args.get('flow', 'user')
+
+    if flow == 'admin' and current_app.config["ADMIN_AUTH_MODE"] == "local":
+        flash("Microsoft sign-in is not enabled for admins.", "danger")
+        return redirect(url_for('admin.admin'))
+    if flow == 'user' and current_app.config["USER_AUTH_MODE"] == "ldap":
+        flash("Microsoft sign-in is not enabled.", "danger")
+        return redirect(url_for('user.home'))
+
     session['oauth_flow'] = flow
     redirect_uri = url_for('auth.oauth_callback', _external=True)
     return oauth.entra.authorize_redirect(redirect_uri)

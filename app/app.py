@@ -84,6 +84,10 @@ def create_app():
     app.config["ENTRA_CLIENT_SECRET"] = os.environ.get("ENTRA_CLIENT_SECRET")
     app.config["ENTRA_TENANT_ID"]     = os.environ.get("ENTRA_TENANT_ID")
 
+    # ── Auth modes ────────────────────────────────────────────────────────────
+    app.config["ADMIN_AUTH_MODE"] = os.environ.get("ADMIN_AUTH_MODE", "local")
+    app.config["USER_AUTH_MODE"]  = os.environ.get("USER_AUTH_MODE",  "ldap")
+
     # ── Instance config overrides (dev/instance/config.py in development) ─────
     app.config.from_pyfile("config.py", silent=True)
 
@@ -99,6 +103,8 @@ def create_app():
     def inject():
         return {
             "entra_enabled"           : bool(app.config.get("ENTRA_CLIENT_ID")),
+            "admin_auth_mode"         : app.config["ADMIN_AUTH_MODE"],
+            "user_auth_mode"          : app.config["USER_AUTH_MODE"],
             "SITE_TITLE"              : app.config["SITE_TITLE"],
             "LOGO"                    : app.config["LOGO"],
             "COMPANY_NAME"            : app.config["COMPANY_NAME"],

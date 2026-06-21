@@ -10,6 +10,9 @@ def home():
 
 @user_blueprint.route("/login", methods=["POST"])
 def login():
+    if current_app.config["USER_AUTH_MODE"] == "entra":
+        flash("Password login is disabled. Use Microsoft sign-in.", "danger")
+        return redirect(url_for("user.home"))
     if not login_limiter.is_allowed(request.remote_addr):
         flash("Too many login attempts. Please try again later.", "danger")
         return redirect(url_for("user.home"))

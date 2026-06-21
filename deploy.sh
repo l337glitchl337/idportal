@@ -275,6 +275,15 @@ MAIL_DEFAULT_RECIP=CHANGE_ME
 ENTRA_CLIENT_ID=
 ENTRA_CLIENT_SECRET=
 ENTRA_TENANT_ID=
+
+# ─── Authentication modes ─────────────────────────────────────────────────────
+# Controls which login method is accepted.
+#   ADMIN_AUTH_MODE: local | entra | both  (default: local)
+#   USER_AUTH_MODE:  ldap  | entra | both  (default: ldap)
+# Set to 'entra' to disable password/LDAP login and require Microsoft sign-in.
+# Set to 'both' to allow either method.
+ADMIN_AUTH_MODE=local
+USER_AUTH_MODE=ldap
 EOF
 
         ok "$ENV_FILE created with generated secrets"

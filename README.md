@@ -204,9 +204,28 @@ ENTRA_TENANT_ID=<directory id>
 
 Leave these blank or unset to disable the feature. The button will not appear on the login pages when they are not configured.
 
+### Authentication modes
+
+Two environment variables control which login methods are accepted:
+
+```env
+ADMIN_AUTH_MODE=local   # local | entra | both
+USER_AUTH_MODE=ldap     # ldap  | entra | both
+```
+
+| Mode | Behaviour |
+|------|-----------|
+| `local` / `ldap` | Only password or LDAP login. Microsoft button hidden. (default) |
+| `entra` | Only Microsoft sign-in. Password/LDAP form hidden, routes blocked. |
+| `both` | Both methods available. |
+
+Set `ADMIN_AUTH_MODE=entra` if you want admins to sign in exclusively through Microsoft — no passwords are required or set on their accounts. Set `USER_AUTH_MODE=entra` to do the same for end users.
+
 ### Admin provisioning
 
 Admin accounts must be created in the admin panel before an Entra login will be accepted. A user who signs in with a Microsoft account that has no matching email in the `admins` table will be blocked with an error message.
+
+When `ADMIN_AUTH_MODE=entra`, the welcome email sent to a new admin contains a sign-in link instead of a password reset link.
 
 ---
 

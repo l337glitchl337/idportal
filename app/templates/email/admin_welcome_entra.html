@@ -1,0 +1,13 @@
+{% extends "email/base_email.html" %}
+{% block title %}Welcome to IDPortal!{% endblock %}
+{% block content %}
+<h1>Hello {{ first_name }},</h1>
+<p>You have been given access to the IDPortal admin panel.</p>
+<p>Sign in using your Microsoft account at the link below:</p>
+<p style="text-align:center;">
+  <a href="{{ ADMIN_URL }}" class="btn">Sign In with Microsoft</a>
+</p>
+<p>If the button above doesn't work, copy and paste this link into your browser:</p>
+<p><a href="{{ ADMIN_URL }}">{{ ADMIN_URL }}</a></p>
+<p>Thank you,<br>{{ COMPANY_EMAIL_SIGNATURE }}</p>
+{% endblock %}

@@ -15,10 +15,13 @@ admin_blueprint = Blueprint("admin", __name__)
 @admin_blueprint.route("/admin", methods = ["POST", "GET"])
 def admin():
     if request.method == "POST":
+        if current_app.config["ADMIN_AUTH_MODE"] == "entra":
+            flash("Password login is disabled. Use Microsoft sign-in.", "danger")
+            return redirect(url_for("admin.admin"))
         username = request.form.get("username")
         password = request.form.get("password")
         auth_service = current_app.auth_service
-        
+
         if auth_service.admin_login(username, password):
             if session["on_login"]:
                 flash("Please change your password before proceeding", "danger")
@@ -82,7 +85,10 @@ def create_admin_account():
 
     if admin_service.create_admin(first_name, last_name, username, email, role):
         flash("Admin created succesfully!", "success")
-        email_service.send_welcome_email(username, first_name, email)
+        if current_app.config["ADMIN_AUTH_MODE"] == "entra":
+            email_service.send_entra_welcome_email(first_name, email)
+        else:
+            email_service.send_welcome_email(username, first_name, email)
     else:
         flash("Failed to create admin account. Please check logs for more details", "danger")
     return redirect(url_for("admin.admin_panel", active_tab="admins"))
@@ -135,6 +141,9 @@ def approve_submission():
 @admin_blueprint.route("/change_admin_password", methods=["POST", "GET"])
 @DecoratorHelper.check_admin_login
 def change_admin_password():
+    if current_app.config["ADMIN_AUTH_MODE"] == "entra" and "forgot_password_token" not in session:
+        flash("Password management is disabled in Entra-only mode.", "danger")
+        return redirect(url_for("admin.admin_panel", active_tab="profile"))
     auth_service = current_app.auth_service
     if request.method == "GET":
         if "forgot_password_token" in session:
@@ -166,6 +175,9 @@ def change_admin_password():
         
 @admin_blueprint.route("/forgot_password", methods=["POST", "GET"])
 def forgot_password():
+    if current_app.config["ADMIN_AUTH_MODE"] == "entra":
+        flash("Password reset is not available in Entra-only mode.", "danger")
+        return redirect(url_for("admin.admin"))
     email_service = current_app.email_service
     auth_service = current_app.auth_service
     if request.method == "POST":

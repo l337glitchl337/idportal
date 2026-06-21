@@ -82,6 +82,20 @@ class EmailService:
         self.logger.info(f"Succesfully sent welcome email to {email}")
         return True
     
+    def send_entra_welcome_email(self, first_name, email) -> bool:
+        html_body = render_template('email/admin_welcome_entra.html', first_name=first_name)
+        msg = Message(subject="Welcome to IDPortal!",
+                      recipients=[email],
+                      html=html_body)
+        try:
+            with self.mail.connect() as conn:
+                conn.send(msg)
+        except Exception:
+            self.logger.exception("Error sending Entra welcome email!")
+            return False
+        self.logger.info(f"Sent Entra welcome email to {email}")
+        return True
+
     def send_forgot_password_email(self, **kwargs) -> bool:
         auth_service = self.app.auth_service
         if "email" in kwargs:

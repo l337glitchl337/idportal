@@ -14,12 +14,13 @@
                alt="ID Card Template"
                class="id-card-img">
 
+          {% if user_auth_mode in ('ldap', 'both') %}
           <form method="POST" action="{{ url_for('user.login') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3 text-start">
               <label for="email" class="form-label">Email</label>
               <input type="email" class="form-control" id="email"
-                     name="email" placeholder="Your ogranization email address" required>
+                     name="email" placeholder="Your organization email address" required>
             </div>
             <div class="mb-3 text-start">
               <label for="password" class="form-label">Password</label>
@@ -28,11 +29,14 @@
             </div>
             <button type="submit" class="btn btn-primary w-100">Log In</button>
           </form>
+          {% endif %}
 
-          {% if entra_enabled %}
+          {% if entra_enabled and user_auth_mode in ('entra', 'both') %}
+          {% if user_auth_mode == 'both' %}
           <div class="d-flex align-items-center my-3">
             <hr class="flex-grow-1"><span class="mx-2 text-muted small">or</span><hr class="flex-grow-1">
           </div>
+          {% endif %}
           <a href="{{ url_for('auth.oauth_login', flow='user') }}" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
             Sign in with Microsoft

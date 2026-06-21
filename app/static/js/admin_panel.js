@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Open Create Admin Modal
   document.getElementById('createAdminBtn').addEventListener('click', function () {
-    const entraOnly = cfg.adminAuthMode === 'entra';
+    const entraOnly = _cfg.adminAuthMode === 'entra';
     createAdminModalBody.innerHTML = `
       <form id="createAdminForm" method="POST" action="/create_admin_account">
         <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">

@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ── Single reject ────────────────────────────────────────────────────────
 
-  document.querySelectorAll('.btn-danger[data-request-id]').forEach(button => {
+  document.querySelectorAll('.btn-danger[data-action="reject"]').forEach(button => {
     button.addEventListener('click', function () {
       const requestId = this.getAttribute('data-request-id');
       rejectModalBody.innerHTML = buildRejectForm(true);

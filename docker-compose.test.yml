@@ -59,7 +59,7 @@ services:
       - "${HTTP_PORT:-8080}:80"
       - "${HTTPS_PORT:-8443}:443"
     volumes:
-      - ./docker/nginx/nginx.ssl.conf:/etc/nginx/conf.d/default.conf:z
+      - ./docker/nginx/nginx.test.conf:/etc/nginx/conf.d/default.conf:z
       - ./docker/nginx/certs:/etc/nginx/certs:z
     depends_on:
       - flask

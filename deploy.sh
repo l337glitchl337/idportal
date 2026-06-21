@@ -577,6 +577,18 @@ PYEOF
     warn "Save this link — it will not be shown again."
 }
 
+# ─── Generate test nginx config with correct redirect port ────────────────────
+# nginx's $host strips the port, so "return 301 https://$host$request_uri"
+# redirects to port 443 (default), not the mapped HTTPS port (e.g. 8443).
+# We generate a test-specific config with the actual HTTPS port injected.
+setup_nginx_test_config() {
+    $TEST_MODE || return 0
+    local https_port
+    https_port=$(env_get "HTTPS_PORT" 2>/dev/null || echo "8443")
+    sed 's|return 301 https://$host$request_uri|return 301 https://$host:'"${https_port}"'$request_uri|' \
+        docker/nginx/nginx.ssl.conf > docker/nginx/nginx.test.conf
+}
+
 # ─── Sync test URLs to current HTTPS_PORT ─────────────────────────────────────
 sync_test_urls() {
     $TEST_MODE || return 0
@@ -657,6 +669,7 @@ main() {
         backup_db
     fi
 
+    setup_nginx_test_config
     build_images
     deploy
 

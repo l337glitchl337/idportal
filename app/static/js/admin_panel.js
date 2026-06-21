@@ -360,13 +360,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Open Create Admin Modal
   document.getElementById('createAdminBtn').addEventListener('click', function () {
-    const entraOnly = _cfg.adminAuthMode === 'entra';
+    const authMode = _cfg.adminAuthMode;
+    const entraOnly = authMode === 'entra';
+    const entraEnabled = authMode === 'entra' || authMode === 'both';
     createAdminModalBody.innerHTML = `
       <form id="createAdminForm" method="POST" action="/create_admin_account">
         <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
-        ${entraOnly ? `<div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3">
+        ${entraEnabled ? `<div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-          This admin will sign in with their Microsoft account.
+          ${entraOnly ? 'This admin will sign in with their Microsoft account.' : 'This admin can sign in with Microsoft or their local credentials.'}
         </div>` : ''}
         <div class="mb-3">
           <label for="firstName" class="form-label">First Name</label>

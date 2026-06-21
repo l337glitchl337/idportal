@@ -159,7 +159,14 @@ LDAP_SEARCH_FILTER=(mail=%s)
 LDAP_ATTRIBUTES={"First Name":"givenName","Last Name":"sn","ID Number":"title","Location":"o","cn":"cn","Email":"mail"}
 LDAP_USE_TLS=false
 
+# ─── Test stack ports ─────────────────────────────────────────────────────────
+# Change these if the defaults conflict with something already on your machine.
+HTTPS_PORT=8443
+HTTP_PORT=8080
+MAILHOG_PORT=8025
+
 # ─── Site URLs ────────────────────────────────────────────────────────────────
+# Keep these in sync with HTTPS_PORT above.
 USER_LOGIN_URL=https://localhost:8443
 FORGOT_PASSWORD_URL=https://localhost:8443/forgot_password
 REVIEW_REQUEST_URL=https://localhost:8443/admin_panel
@@ -551,10 +558,14 @@ print_summary() {
     echo -e "${GREEN}${BOLD}╚══════════════════════════════════╝${RESET}"
     echo
     if $TEST_MODE; then
-        echo -e "  Portal  : ${CYAN}https://localhost:8443${RESET}  (accept the self-signed cert warning)"
-        echo -e "  Admin   : ${CYAN}https://localhost:8443/admin${RESET}"
-        echo -e "  MailHog : ${CYAN}http://localhost:8025${RESET}"
-        echo -e "  HTTP    : http://localhost:8080  →  redirects to 8443"
+        local https_port http_port mailhog_port
+        https_port=$(env_get "HTTPS_PORT" 2>/dev/null || echo "8443")
+        http_port=$(env_get "HTTP_PORT" 2>/dev/null || echo "8080")
+        mailhog_port=$(env_get "MAILHOG_PORT" 2>/dev/null || echo "8025")
+        echo -e "  Portal  : ${CYAN}https://localhost:${https_port}${RESET}  (accept the self-signed cert warning)"
+        echo -e "  Admin   : ${CYAN}https://localhost:${https_port}/admin${RESET}"
+        echo -e "  MailHog : ${CYAN}http://localhost:${mailhog_port}${RESET}"
+        echo -e "  HTTP    : http://localhost:${http_port}  →  redirects to ${https_port}"
         echo
         echo -e "  Test LDAP login: testuser@dev.local / TestPass123!"
     else

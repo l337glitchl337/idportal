@@ -332,10 +332,11 @@
 {% block scripts %}
 <script id="app-config" type="application/json">
   {
-    "batchEditUrl": "{{ url_for('admin.batch_edit') }}",
-    "approveUrl":   "{{ url_for('admin.approve_submission') }}",
-    "rejectUrl":    "{{ url_for('admin.reject_submission') }}",
-    "deleteUrl":    "{{ url_for('admin.delete_submission') }}"
+    "batchEditUrl":    "{{ url_for('admin.batch_edit') }}",
+    "approveUrl":      "{{ url_for('admin.approve_submission') }}",
+    "rejectUrl":       "{{ url_for('admin.reject_submission') }}",
+    "deleteUrl":       "{{ url_for('admin.delete_submission') }}",
+    "adminAuthMode":   "{{ admin_auth_mode }}"
   }
 </script>
 <script src="{{ url_for('static', filename='js/admin_panel.js') }}"></script>

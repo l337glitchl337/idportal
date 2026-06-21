@@ -360,10 +360,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Open Create Admin Modal
   document.getElementById('createAdminBtn').addEventListener('click', function () {
-    // Populate the modal body with a form
+    const entraOnly = cfg.adminAuthMode === 'entra';
     createAdminModalBody.innerHTML = `
       <form id="createAdminForm" method="POST" action="/create_admin_account">
         <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
+        ${entraOnly ? `<div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+          This admin will sign in with their Microsoft account.
+        </div>` : ''}
         <div class="mb-3">
           <label for="firstName" class="form-label">First Name</label>
           <input type="text" class="form-control" id="firstName" name="first_name" required>
@@ -372,10 +376,10 @@ document.addEventListener('DOMContentLoaded', function () {
           <label for="lastName" class="form-label">Last Name</label>
           <input type="text" class="form-control" id="lastName" name="last_name" required>
         </div>
-        <div class="mb-3">
+        ${entraOnly ? '' : `<div class="mb-3">
           <label for="username" class="form-label">Username</label>
           <input type="text" class="form-control" id="username" name="username" required>
-        </div>
+        </div>`}
         <div class="mb-3">
           <label for="email" class="form-label">Email</label>
           <input type="email" class="form-control" id="email" name="email" required>

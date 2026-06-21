@@ -31,20 +31,26 @@ class AuthService:
                 self.logger.warning(f"[{request.remote_addr}] login failed for user: {username} - Incorrect password")
                 self.check_bfa(username, request.remote_addr, True)
                 return False
-            session.clear()
-            session.permanent = True
-            session["first_name"] = row[0]
-            session["last_name"] = row[1]
-            session["admin_username"] = row[2]
-            session["email"] = row[3]
-            session["role"] = row[6]
-            session["on_login"] = row[7]
-            session["user_id"] = row[8]
+            self._set_admin_session(row[0], row[1], row[2], row[3], row[6], row[7], row[8])
             self.logger.info(f"[{request.remote_addr}] login successful for user: {username}")
             return True
         else:
             return False
     
+    def _set_admin_session(self, first_name, last_name, username, email, role, on_login, user_id):
+        session.clear()
+        session.permanent = True
+        session["first_name"]     = first_name
+        session["last_name"]      = last_name
+        session["admin_username"] = username
+        session["email"]          = email
+        session["role"]           = role
+        session["on_login"]       = on_login
+        session["user_id"]        = user_id
+
+    def _fetch_admin_password(self, username):
+        return self.db.execute_query("select password from admins where username=%s", (username,), fetch_one=True)
+
     def update_admin_password(self, username, new_password) -> bool:
         self.logger.info(f"{username} attempting to change password.")
         if not UtilityHelper.check_password_complexity(new_password):
@@ -52,7 +58,7 @@ class AuthService:
         new_password = new_password.encode('utf-8')
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(new_password, salt).decode("utf-8")
-        row = self.db.execute_query("select password from admins where username=%s", (username,), fetch_one=True)
+        row = self._fetch_admin_password(username)
         if not row:
             self.logger.error(f"{username} not found in admins table.")
             return False
@@ -70,7 +76,7 @@ class AuthService:
         return True
     
     def compare_password(self, username, current_password) -> bool:
-        row = self.db.execute_query("select password from admins where username=%s", (username,), fetch_one=True)
+        row = self._fetch_admin_password(username)
         if not row:
             self.logger.warning(f"{username} not found in admins, unable to compare passwords.")
             return False
@@ -148,15 +154,7 @@ class AuthService:
                 (given_name or row[0], family_name or row[1], row[7])
             )
 
-        session.clear()
-        session.permanent = True
-        session["first_name"]     = given_name  or row[0]
-        session["last_name"]      = family_name or row[1]
-        session["admin_username"] = row[2]
-        session["email"]          = row[3]
-        session["role"]           = row[5]
-        session["on_login"]       = 0
-        session["user_id"]        = row[7]
+        self._set_admin_session(given_name or row[0], family_name or row[1], row[2], row[3], row[5], 0, row[7])
         self.logger.info(f"Entra admin login successful for: {email}")
         return True
 

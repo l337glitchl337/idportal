@@ -21,459 +21,325 @@ function showResultModal(success, message, errors = {}) {
     return;
   }
 
-  // Update modal title and message
   modalTitle.textContent = success ? "Success" : "Error";
   modalBody.textContent = message;
 
-  // Update modal errors if any
   if (Object.keys(errors).length > 0) {
     const errorList = Object.entries(errors)
       .map(([id, error]) => `<li>Request ID ${escapeHtml(id)}: ${escapeHtml(error)}</li>`)
       .join('');
     modalErrors.innerHTML = `<ul>${errorList}</ul>`;
   } else {
-    modalErrors.innerHTML = ''; // Clear errors if none
+    modalErrors.innerHTML = '';
   }
 
-  // Show the modal
   bootstrap.Modal.getOrCreateInstance(document.getElementById('resultModal')).show();
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+function postAction(url, formData) {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
+    body: formData,
+  }).then(r => r.json());
+}
 
-  function setBulkRequestIds(ids) {
-    const container = document.getElementById('bulkRequestIdsContainer');
-    container.innerHTML = '';
-    ids.forEach(function (id) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'request_ids';
-      input.value = id;
-      container.appendChild(input);
+function buildRejectForm(showCounter) {
+  return `
+    <form id="rejectForm">
+      <div class="mb-3">
+        <label for="rejectReason" class="form-label">Rejection Comments (max 250 characters)</label>
+        <textarea class="form-control" id="rejectReason" name="rejectReason" rows="4" maxlength="250" placeholder="Enter rejection comments..."></textarea>
+        ${showCounter ? '<small id="rejectReasonCount" class="form-text text-muted">0/250 characters</small>' : ''}
+      </div>
+    </form>
+  `;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Shared modal element references
+  const rejectModal          = document.getElementById('rejectModal');
+  const rejectModalBody      = document.getElementById('rejectModalBody');
+  const rejectConfirmBtn     = document.getElementById('rejectConfirmBtn');
+  const photoModal           = document.getElementById('photoModal');
+  const photoModalBody       = document.getElementById('photoModalBody');
+  const resultModal          = document.getElementById('resultModal');
+  const commentsModal        = document.getElementById('commentsModal');
+  const commentsModalBody    = document.getElementById('commentsModalBody');
+  const createAdminModal     = document.getElementById('createAdminModal');
+  const createAdminModalBody = document.getElementById('createAdminModalBody');
+  const editAdminModal       = document.getElementById('editAdminModal');
+  const editAdminModalBody   = document.getElementById('editAdminModalBody');
+  const deleteAdminModal     = document.getElementById('deleteAdminModal');
+  const deleteAdminModalBody = document.getElementById('deleteAdminModalBody');
+  const deleteSubmissionModal     = document.getElementById('deleteSubmissionModal');
+  const deleteSubmissionModalBody = document.getElementById('deleteSubmissionModalBody');
+
+  // ── Select-all / row highlight / button toggle ────────────────────────────
+
+  const selectAll   = document.getElementById('selectAllPending');
+  const checkboxes  = document.querySelectorAll('.pending-checkbox');
+  const cbRows      = Array.from(checkboxes).map(cb => cb.closest('tr'));
+  const actionsHeader = document.querySelector('thead th:last-child');
+
+  function updateRowHighlight() {
+    checkboxes.forEach((cb, i) => {
+      cbRows[i]?.classList.toggle('table-active', cb.checked);
     });
   }
 
-  // Approve Selected
-  document.getElementById('approveSelectedBtn').addEventListener('click', function (e) {
-    e.preventDefault();
-    const ids = Array.from(document.querySelectorAll('.pending-checkbox:checked')).map(cb => cb.value);
-    if (ids.length === 0) {
-      alert('No requests selected.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('action', 'approve');
-    ids.forEach(id => formData.append('request_ids', id));
-
-    fetch(batchEditUrl, {
-      method: 'POST',
-      headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
-      body: formData
-    })
-      .then(response => response.json())
-      .then(data => {
-        showResultModal(data.success, data.message, data.errors || {});
-      })
-      .catch(() => {
-        showResultModal(false, 'An error occurred while approving the submissions.');
-      });
-  });
-
-  // Reject Selected
-  document.getElementById('rejectSelectedBtn').addEventListener('click', function (e) {
-    e.preventDefault();
-    const ids = Array.from(document.querySelectorAll('.pending-checkbox:checked')).map(cb => cb.value);
-    if (ids.length === 0) {
-      alert('No requests selected.');
-      return;
-    }
-
-    // Populate the modal body with the rejection comments text box
-    rejectModalBody.innerHTML = `
-      <form id="rejectForm">
-        <div class="mb-3">
-          <label for="rejectReason" class="form-label">Rejection Comments (max 250 characters)</label>
-          <textarea class="form-control" id="rejectReason" name="rejectReason" rows="4" maxlength="250" placeholder="Enter rejection comments..."></textarea>
-        </div>
-      </form>
-    `;
-
-    // Show the modal
-    const modalInstance = bootstrap.Modal.getOrCreateInstance(rejectModal);
-    modalInstance.show();
-
-    // Handle confirmation
-    rejectConfirmBtn.onclick = function () {
-      const rejectReasonInput = document.getElementById('rejectReason');
-      const comments = rejectReasonInput.value.trim();
-      if (comments.length === 0) {
-        alert('Please enter rejection comments.');
-        return;
+  function toggleRowButtons() {
+    const anySelected = Array.from(checkboxes).some(cb => cb.checked);
+    document.querySelectorAll('tbody tr').forEach(row => {
+      const approveBtn = row.querySelector('.btn-success[data-request-id]');
+      const rejectBtn  = row.querySelector('.btn-danger[data-request-id]');
+      if (approveBtn && rejectBtn) {
+        approveBtn.style.display = anySelected ? 'none' : '';
+        rejectBtn.style.display  = anySelected ? 'none' : '';
       }
+    });
+    if (actionsHeader) actionsHeader.style.display = anySelected ? 'none' : '';
+  }
 
-      const formData = new FormData();
-      formData.append('action', 'reject');
-      ids.forEach(id => formData.append('request_ids', id));
-      formData.append('comments', comments);
-
-      fetch(batchEditUrl, {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
-        body: formData
-      })
-        .then(response => response.json())
-        .then(data => {
-          showResultModal(data.success, data.message, data.errors || {});
-          modalInstance.hide(); // Close the modal after submission
-        })
-        .catch(() => {
-          showResultModal(false, 'An error occurred while rejecting the submissions.');
-          modalInstance.hide(); // Close the modal after submission
-        });
-    };
+  if (selectAll) {
+    selectAll.addEventListener('change', function () {
+      checkboxes.forEach(cb => { cb.checked = selectAll.checked; });
+      updateRowHighlight();
+      toggleRowButtons();
+    });
+  }
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => { updateRowHighlight(); toggleRowButtons(); });
   });
 
-  // Approve Single Submission
+  // ── Bulk approve ─────────────────────────────────────────────────────────
+
+  const approveSelectedBtn = document.getElementById('approveSelectedBtn');
+  if (approveSelectedBtn) {
+    approveSelectedBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const ids = Array.from(document.querySelectorAll('.pending-checkbox:checked')).map(cb => cb.value);
+      if (!ids.length) { alert('No requests selected.'); return; }
+      const formData = new FormData();
+      formData.append('action', 'approve');
+      ids.forEach(id => formData.append('request_ids', id));
+      postAction(batchEditUrl, formData)
+        .then(data => showResultModal(data.success, data.message, data.errors || {}))
+        .catch(() => showResultModal(false, 'An error occurred while approving the submissions.'));
+    });
+  }
+
+  // ── Bulk reject ──────────────────────────────────────────────────────────
+
+  const rejectSelectedBtn = document.getElementById('rejectSelectedBtn');
+  if (rejectSelectedBtn) {
+    rejectSelectedBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const ids = Array.from(document.querySelectorAll('.pending-checkbox:checked')).map(cb => cb.value);
+      if (!ids.length) { alert('No requests selected.'); return; }
+      rejectModalBody.innerHTML = buildRejectForm(false);
+      const modalInstance = bootstrap.Modal.getOrCreateInstance(rejectModal);
+      modalInstance.show();
+      rejectConfirmBtn.onclick = function () {
+        const comments = document.getElementById('rejectReason').value.trim();
+        if (!comments) { alert('Please enter rejection comments.'); return; }
+        const formData = new FormData();
+        formData.append('action', 'reject');
+        ids.forEach(id => formData.append('request_ids', id));
+        formData.append('comments', comments);
+        postAction(batchEditUrl, formData)
+          .then(data => showResultModal(data.success, data.message, data.errors || {}))
+          .catch(() => showResultModal(false, 'An error occurred while rejecting the submissions.'))
+          .finally(() => modalInstance.hide());
+      };
+    });
+  }
+
+  // ── Single approve ───────────────────────────────────────────────────────
+
   document.querySelectorAll('.btn-success[data-request-id]').forEach(button => {
     button.addEventListener('click', function () {
-      const requestId = this.getAttribute('data-request-id'); // Get the request ID from the button
       const formData = new FormData();
-      formData.append('request_id', requestId);
-
-      fetch(approveUrl, {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
-        body: formData
-      })
-        .then(response => response.json())
-        .then(data => {
-          showResultModal(data.success, data.message, data.errors || {});
-        })
-        .catch(() => {
-          showResultModal(false, 'An error occurred while approving the submission.');
-        });
+      formData.append('request_id', this.getAttribute('data-request-id'));
+      postAction(approveUrl, formData)
+        .then(data => showResultModal(data.success, data.message, data.errors || {}))
+        .catch(() => showResultModal(false, 'An error occurred while approving the submission.'));
     });
   });
 
-  // Reject Single Submission
+  // ── Single reject ────────────────────────────────────────────────────────
+
   document.querySelectorAll('.btn-danger[data-request-id]').forEach(button => {
     button.addEventListener('click', function () {
-      const requestId = this.getAttribute('data-request-id'); // Get the request ID from the button
-
-      // Populate the modal body with the rejection comments text box and live character count
-      const rejectModal = document.getElementById('rejectModal');
-      const rejectModalBody = document.getElementById('rejectModalBody');
-      const rejectConfirmBtn = document.getElementById('rejectConfirmBtn');
-
-      rejectModalBody.innerHTML = `
-        <form id="rejectForm">
-          <div class="mb-3">
-            <label for="rejectReason" class="form-label">Rejection Comments (max 250 characters)</label>
-            <textarea class="form-control" id="rejectReason" name="rejectReason" rows="4" maxlength="250" placeholder="Enter rejection comments..."></textarea>
-            <small id="rejectReasonCount" class="form-text text-muted">0/250 characters</small>
-          </div>
-        </form>
-      `;
-
-      // Show the modal
+      const requestId = this.getAttribute('data-request-id');
+      rejectModalBody.innerHTML = buildRejectForm(true);
       const modalInstance = bootstrap.Modal.getOrCreateInstance(rejectModal);
       modalInstance.show();
-
-      // Handle live character count
       const rejectReasonInput = document.getElementById('rejectReason');
       const rejectReasonCount = document.getElementById('rejectReasonCount');
-
       rejectReasonInput.addEventListener('input', function () {
-        const currentLength = rejectReasonInput.value.length;
-        rejectReasonCount.textContent = `${currentLength}/250 characters`;
+        rejectReasonCount.textContent = `${rejectReasonInput.value.length}/250 characters`;
       });
-
-      // Handle confirmation
       rejectConfirmBtn.onclick = function () {
         const comments = rejectReasonInput.value.trim();
-        if (comments.length === 0) {
-          alert('Please enter rejection comments.');
-          return;
-        }
-
+        if (!comments) { alert('Please enter rejection comments.'); return; }
         const formData = new FormData();
         formData.append('request_id', requestId);
         formData.append('comments', comments);
-
-        fetch(rejectUrl, {
-          method: 'POST',
-          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
-          body: formData
-        })
-          .then(response => response.json())
-          .then(data => {
-            showResultModal(data.success, data.message, data.errors || {});
-            modalInstance.hide(); // Close the modal after submission
-          })
-          .catch(() => {
-            showResultModal(false, 'An error occurred while rejecting the submission.');
-            modalInstance.hide(); // Close the modal after submission
-          });
+        postAction(rejectUrl, formData)
+          .then(data => showResultModal(data.success, data.message, data.errors || {}))
+          .catch(() => showResultModal(false, 'An error occurred while rejecting the submission.'))
+          .finally(() => modalInstance.hide());
       };
     });
   });
-});
 
-document.addEventListener('DOMContentLoaded', function () {
-    const photoModal = document.getElementById('photoModal');
-    const photoModalBody = document.getElementById('photoModalBody');
+  // ── Photo modal ──────────────────────────────────────────────────────────
 
+  if (photoModal) {
     photoModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget; // Button that triggered the modal
-        const userPhotoUrl = button.getAttribute('data-photo-user');
-        const licensePhotoUrl = button.getAttribute('data-photo-license');
-
-        // Update the modal body with the photos, centered
-        photoModalBody.innerHTML = `
-            <div class="mb-3 text-center">
-                <div class="fw-bold mb-1">User Photo</div>
-                <img src="${escapeHtml(userPhotoUrl)}" alt="User Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
-            </div>
-            <div class="text-center">
-                <div class="fw-bold mb-1">Driver's License</div>
-                <img src="${escapeHtml(licensePhotoUrl)}" alt="License Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
-            </div>
-        `;
+      const btn = event.relatedTarget;
+      photoModalBody.innerHTML = `
+        <div class="mb-3 text-center">
+          <div class="fw-bold mb-1">User Photo</div>
+          <img src="${escapeHtml(btn.getAttribute('data-photo-user'))}" alt="User Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
+        </div>
+        <div class="text-center">
+          <div class="fw-bold mb-1">Driver's License</div>
+          <img src="${escapeHtml(btn.getAttribute('data-photo-license'))}" alt="License Photo" class="img-fluid d-block mx-auto" style="max-height:200px;">
+        </div>
+      `;
     });
-});
+  }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const selectAll = document.getElementById('selectAllPending');
-    const checkboxes = document.querySelectorAll('.pending-checkbox');
-    const rows = Array.from(checkboxes).map(cb => cb.closest('tr'));
-
-    function updateRowHighlight() {
-      checkboxes.forEach((cb, i) => {
-        if (cb.checked) {
-          rows[i].classList.add('table-active');
-        } else {
-          rows[i].classList.remove('table-active');
-        }
-      });
-    }
-
-    if (selectAll) {
-      selectAll.addEventListener('change', function() {
-        checkboxes.forEach(cb => { cb.checked = selectAll.checked; });
-        updateRowHighlight();
-      });
-    }
-
-    checkboxes.forEach((cb, i) => {
-      cb.addEventListener('change', updateRowHighlight);
-    });
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-  const resultModal = document.getElementById('resultModal');
+  // ── Result modal — reload page on close ──────────────────────────────────
 
   if (resultModal) {
     resultModal.addEventListener('hide.bs.modal', function () {
-      // Refresh the current page
       window.location.reload();
     });
   }
-});
 
-document.addEventListener('DOMContentLoaded', function () {
-  const commentsModal = document.getElementById('commentsModal');
-  const commentsModalBody = document.getElementById('commentsModalBody');
+  // ── Comments modal ───────────────────────────────────────────────────────
 
-  // Handle "View Comments" button click
   document.querySelectorAll('.btn-warning[data-comments]').forEach(button => {
     button.addEventListener('click', function () {
-      const comments = this.getAttribute('data-comments');
-
       const label = document.createElement('label');
       label.className = 'form-label';
       label.textContent = 'Rejection Comments';
-
       const textarea = document.createElement('textarea');
       textarea.className = 'form-control';
       textarea.rows = 4;
       textarea.readOnly = true;
-      textarea.textContent = comments;
-
+      textarea.textContent = this.getAttribute('data-comments');
       const wrapper = document.createElement('div');
       wrapper.className = 'mb-3';
       wrapper.appendChild(label);
       wrapper.appendChild(textarea);
-
       commentsModalBody.innerHTML = '';
       commentsModalBody.appendChild(wrapper);
-
       bootstrap.Modal.getOrCreateInstance(commentsModal).show();
     });
   });
-});
 
-document.addEventListener('DOMContentLoaded', function () {
-  const checkboxes = document.querySelectorAll('.pending-checkbox');
-  const rows = document.querySelectorAll('tbody tr');
-  const actionsHeader = document.querySelector('thead th:last-child'); // Select the "Actions" header
+  // ── Create admin modal ───────────────────────────────────────────────────
 
-  function toggleRowButtons() {
-    const anySelected = Array.from(checkboxes).some(checkbox => checkbox.checked);
-
-    rows.forEach(row => {
-      const approveButton = row.querySelector('.btn-success[data-request-id]');
-      const rejectButton = row.querySelector('.btn-danger[data-request-id]');
-
-      if (approveButton && rejectButton) {
-        approveButton.style.display = anySelected ? 'none' : '';
-        rejectButton.style.display = anySelected ? 'none' : '';
-      }
+  const createAdminBtn = document.getElementById('createAdminBtn');
+  if (createAdminBtn) {
+    createAdminBtn.addEventListener('click', function () {
+      const authMode    = _cfg.adminAuthMode;
+      const entraOnly   = authMode === 'entra';
+      const entraEnabled = authMode === 'entra' || authMode === 'both';
+      createAdminModalBody.innerHTML = `
+        <form id="createAdminForm" method="POST" action="/create_admin_account">
+          <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
+          ${entraEnabled ? `<div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+            ${entraOnly ? 'This admin will sign in with their Microsoft account. Name will be populated on first login.' : 'This admin can sign in with Microsoft or their local credentials.'}
+          </div>` : ''}
+          ${entraOnly ? '' : `<div class="mb-3">
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="firstName" name="first_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="lastName" name="last_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+          </div>`}
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+          </div>
+          <div class="mb-3">
+            <label for="role" class="form-label">Role</label>
+            <select class="form-select" id="role" name="role" required>
+              <option value="manager">Manager</option>
+              <option value="super">Super</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create</button>
+          </div>
+        </form>
+      `;
+      bootstrap.Modal.getOrCreateInstance(createAdminModal).show();
     });
-
-    // Toggle visibility of the "Actions" header
-    if (actionsHeader) {
-      actionsHeader.style.display = anySelected ? 'none' : '';
-    }
   }
 
-  // Add event listeners to checkboxes
-  checkboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', toggleRowButtons);
-  });
+  // ── Edit admin modal ─────────────────────────────────────────────────────
 
-  // Add event listener to "Select All" checkbox
-  const selectAllCheckbox = document.getElementById('selectAllPending');
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', function () {
-      checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
-      });
-      toggleRowButtons();
-    });
-  }
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-  const createAdminModal = document.getElementById('createAdminModal');
-  const createAdminModalBody = document.getElementById('createAdminModalBody');
-
-  // Open Create Admin Modal
-  document.getElementById('createAdminBtn').addEventListener('click', function () {
-    const authMode = _cfg.adminAuthMode;
-    const entraOnly = authMode === 'entra';
-    const entraEnabled = authMode === 'entra' || authMode === 'both';
-    createAdminModalBody.innerHTML = `
-      <form id="createAdminForm" method="POST" action="/create_admin_account">
-        <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
-        ${entraEnabled ? `<div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-          ${entraOnly ? 'This admin will sign in with their Microsoft account. Name will be populated on first login.' : 'This admin can sign in with Microsoft or their local credentials.'}
-        </div>` : ''}
-        ${entraOnly ? '' : `<div class="mb-3">
-          <label for="firstName" class="form-label">First Name</label>
-          <input type="text" class="form-control" id="firstName" name="first_name" required>
-        </div>
-        <div class="mb-3">
-          <label for="lastName" class="form-label">Last Name</label>
-          <input type="text" class="form-control" id="lastName" name="last_name" required>
-        </div>
-        <div class="mb-3">
-          <label for="username" class="form-label">Username</label>
-          <input type="text" class="form-control" id="username" name="username" required>
-        </div>`}
-        <div class="mb-3">
-          <label for="email" class="form-label">Email</label>
-          <input type="email" class="form-control" id="email" name="email" required>
-        </div>
-        <div class="mb-3">
-          <label for="role" class="form-label">Role</label>
-          <select class="form-select" id="role" name="role" required>
-            <option value="manager">Manager</option>
-            <option value="super">Super</option>
-          </select>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create</button>
-        </div>
-      </form>
-    `;
-
-    // Show the modal
-    const modalInstance = bootstrap.Modal.getOrCreateInstance(createAdminModal);
-    modalInstance.show();
-  });
-});
-
-
-document.addEventListener('DOMContentLoaded', function () {
-  const editAdminModal = document.getElementById('editAdminModal');
-  const editAdminModalBody = document.getElementById('editAdminModalBody');
-
-  // Attach event listener to all edit buttons
   document.querySelectorAll('.editAdminBtn[data-admin]').forEach(button => {
     button.addEventListener('click', function () {
-      let adminData = this.getAttribute('data-admin'); // Get admin data from the button's data attribute
-      let admin = JSON.parse(adminData); // Parse the JSON data
-      let nameParts = (admin.full_name || '').split(' ').filter(Boolean);
-      let firstName = nameParts[0] || '';
-      let lastName = nameParts.slice(1).join(' ') || '';
-
-      // Populate the modal body with a form
+      const admin     = JSON.parse(this.getAttribute('data-admin'));
+      const nameParts = (admin.full_name || '').split(' ').filter(Boolean);
+      const firstName = nameParts[0] || '';
+      const lastName  = nameParts.slice(1).join(' ') || '';
       editAdminModalBody.innerHTML = `
         <form id="createAdminForm" method="POST" action="/edit_admin_account">
           <input type="hidden" name="user_id" value="${escapeHtml(admin.id)}">
           <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
           <div class="mb-3">
-        <label for="firstName" class="form-label">First Name</label>
-        <input type="text" class="form-control" id="firstName" name="first_name" value="${escapeHtml(firstName)}" required>
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="firstName" name="first_name" value="${escapeHtml(firstName)}" required>
           </div>
           <div class="mb-3">
-        <label for="lastName" class="form-label">Last Name</label>
-        <input type="text" class="form-control" id="lastName" name="last_name" value="${escapeHtml(lastName)}" required>
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="lastName" name="last_name" value="${escapeHtml(lastName)}" required>
           </div>
           <div class="mb-3">
-        <label for="username" class="form-label">Username</label>
-        <input type="text" class="form-control" id="username" name="username" value="${escapeHtml(admin.username)}" required>
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" value="${escapeHtml(admin.username)}" required>
           </div>
           <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email" value="${escapeHtml(admin.email)}" required>
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="${escapeHtml(admin.email)}" required>
           </div>
           <div class="mb-3">
-        <label for="role" class="form-label">Role</label>
-        <select class="form-select" id="role" name="role" required>
-          <option value="manager" ${admin.role === 'manager' ? 'selected' : ''}>Manager</option>
-          <option value="super" ${admin.role === 'super' ? 'selected' : ''}>Super</option>
-        </select>
+            <label for="role" class="form-label">Role</label>
+            <select class="form-select" id="role" name="role" required>
+              <option value="manager" ${admin.role === 'manager' ? 'selected' : ''}>Manager</option>
+              <option value="super" ${admin.role === 'super' ? 'selected' : ''}>Super</option>
+            </select>
           </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Update</button>
-        </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update</button>
+          </div>
         </form>
       `;
-
-      // Show the modal
-      const modalInstance = bootstrap.Modal.getOrCreateInstance(editAdminModal);
-      modalInstance.show();
+      bootstrap.Modal.getOrCreateInstance(editAdminModal).show();
     });
   });
-});
 
+  // ── Delete admin modal ───────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', function () {
-  const deleteAdminModal = document.getElementById('deleteAdminModal');
-  const deleteAdminModalBody = document.getElementById('deleteAdminModalBody');
-
-  // Attach event listener to all delete buttons
   document.querySelectorAll('.deleteAdminBtn[data-admin]').forEach(button => {
     button.addEventListener('click', function () {
-      let adminData = this.getAttribute('data-admin');
-      let admin = JSON.parse(adminData);
-
-      // Populate the modal body with confirmation message and confirm button
+      const admin = JSON.parse(this.getAttribute('data-admin'));
       deleteAdminModalBody.innerHTML = `
         <p>Are you sure you want to delete admin <strong>${escapeHtml(admin.full_name || admin.username)}</strong>?</p>
         <input type="hidden" id="deleteAdminUserId" value="${escapeHtml(admin.id)}">
@@ -482,87 +348,42 @@ document.addEventListener('DOMContentLoaded', function () {
           <button type="button" class="btn btn-danger" id="confirmDeleteAdminBtn">Yes, Delete</button>
         </div>
       `;
-
-      // Show the modal
       const modalInstance = bootstrap.Modal.getOrCreateInstance(deleteAdminModal);
       modalInstance.show();
+      document.getElementById('confirmDeleteAdminBtn').onclick = function () {
+        const formData = new FormData();
+        formData.append('user_id', document.getElementById('deleteAdminUserId').value);
+        postAction('/delete_admin_account', formData)
+          .then(data => showResultModal(data.success, data.message || (data.success ? 'Admin deleted successfully.' : 'Failed to delete admin.')))
+          .catch(() => showResultModal(false, 'An error occurred while deleting the admin.'))
+          .finally(() => modalInstance.hide());
+      };
+    });
+  });
 
-      // Set up confirm button handler (must re-select since it's re-rendered)
-      const confirmDeleteBtn = document.getElementById('confirmDeleteAdminBtn');
-      confirmDeleteBtn.onclick = function () {
-        const userId = document.getElementById('deleteAdminUserId').value;
+  // ── Delete submission modal ──────────────────────────────────────────────
 
-        fetch('/delete_admin_account', {
-          method: 'POST',
-          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken },
-          body: new URLSearchParams({ user_id: userId })
-        })
-        .then(response => response.json())
-        .then(data => {
-          // Show result modal based on response, using the returned message
-          if (typeof showResultModal === 'function') {
-            showResultModal(data.success, data.message || (data.success ? 'Admin deleted successfully.' : 'Failed to delete admin.'));
-          }
-          modalInstance.hide();
-        })
-        .catch(() => {
-          if (typeof showResultModal === 'function') {
-            showResultModal(false, 'An error occurred while deleting the admin.');
-          }
-          modalInstance.hide();
-        });
+  document.querySelectorAll('.deleteSubmissionBtn[data-request-id]').forEach(button => {
+    button.addEventListener('click', function () {
+      const requestId = this.getAttribute('data-request-id');
+      const name      = this.getAttribute('data-submission');
+      deleteSubmissionModalBody.innerHTML = `
+        <form id="deleteSubmission">
+          <div class="mb-3">
+            <p>Are you sure you would like to delete this submission for <b>${escapeHtml(name)}</b>?</p>
+          </div>
+        </form>
+      `;
+      const modalInstance = bootstrap.Modal.getOrCreateInstance(deleteSubmissionModal);
+      modalInstance.show();
+      document.getElementById('deleteConfirmBtn').onclick = function () {
+        const formData = new FormData();
+        formData.append('request_id', requestId);
+        postAction(deleteUrl, formData)
+          .then(data => showResultModal(data.success, data.message, data.errors || {}))
+          .catch(() => showResultModal(false, 'An error occurred while deleting the submission.'))
+          .finally(() => modalInstance.hide());
       };
     });
   });
 });
-
-
-
-document.addEventListener('DOMContentLoaded', function () {
-  const deleteSubmissionModal = document.getElementById('deleteSubmissionModal');
-  const deleteSubmissionModalBody = document.getElementById('deleteSubmissionModalBody');
-
-  document.querySelectorAll('.deleteSubmissionBtn[data-request-id]').forEach(button => {
-      button.addEventListener('click', function () {
-        const requestId = this.getAttribute('data-request-id');
-
-        
-        const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
-        let name = this.getAttribute('data-submission');
-
-        deleteSubmissionModalBody.innerHTML = `
-          <form id="deleteSubmission">
-            <div class="mb-3">
-              <p>Are you sure you would like to delete this submission for <b>${escapeHtml(name)}</b>?</p>
-            </div>
-          </form>
-        `;
-
-        // Show the modal
-        const modalInstance = bootstrap.Modal.getOrCreateInstance(deleteSubmissionModal);
-        modalInstance.show();
-
-        // Handle confirmation
-        deleteConfirmBtn.onclick = function () {
-
-          const formData = new FormData();
-          formData.append('request_id', requestId);
-
-          fetch(deleteUrl, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
-            body: formData
-          })
-            .then(response => response.json())
-            .then(data => {
-              showResultModal(data.success, data.message, data.errors || {});
-              modalInstance.hide(); // Close the modal after submission
-            })
-            .catch(() => {
-              showResultModal(false, 'An error occurred while deleting the submission.');
-              modalInstance.hide(); // Close the modal after submission
-            });
-        };
-      });
-    });
-  });

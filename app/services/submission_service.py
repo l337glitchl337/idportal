@@ -1,5 +1,6 @@
-from flask import session, flash
+from flask import session
 from factories import get_logger
+from helpers import UtilityHelper
 
 class SubmissionService:
     def __init__(self, db=None, mail=None):
@@ -56,14 +57,9 @@ class SubmissionService:
         rows = self.db.execute_query(
             "SELECT * FROM submissions WHERE search_vector @@ plainto_tsquery(%s) ORDER BY request_id LIMIT %s OFFSET %s",
             (search_term, per_page, offset), fetch_all=True, dict_cursor=True)
-        total_pages = (total + per_page - 1) // per_page
         return {
-            "search_results": [row for row in rows],
-            "search_pagination": {
-                "total_pages": total_pages,
-                "next_page": page + 1 if page < total_pages else None,
-                "prev_page": page - 1 if page > 1 else None
-            }
+            "search_results": list(rows),
+            "search_pagination": UtilityHelper.paginate(total, page, per_page),
         }
 
     def delete(self, request_id, actor=None) -> bool:

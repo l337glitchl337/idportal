@@ -8,6 +8,7 @@
 
 {% block content %}
 {% import 'includes/macros.html' as macros %}
+{% from 'includes/macros.html' import csrf_field, view_photos_btn %}
 <div class="container py-4">
   <h2 class="text-white mb-4">Admin Panel</h2>
   <ul class="nav nav-pills mb-3" id="admin-tab" role="tablist">
@@ -73,13 +74,7 @@
             <td>{{ req.id_number }}</td>
             <td>{{ req.location }}</td>
             <td>{{ req.timestamp_inserted }}</td>
-            <td>
-              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('admin.serve_upload', filename=req.photo_filepath) }}"
-                data-photo-license="{{ url_for('admin.serve_upload', filename=req.license_filepath) }}">
-                View Photos
-              </button>
-            </td>
+            <td>{{ view_photos_btn(req.photo_filepath, req.license_filepath) }}</td>
             <td>
               <button class="btn btn-sm btn-success" data-request-id="{{ req.request_id }}" data-bs-toggle="modal" data-bs-target="#resultModal" data-action="approve">Approve</button>
               <button class="btn btn-sm btn-danger" data-request-id="{{ req.request_id }}" data-bs-toggle="modal" data-bs-target="#rejectModal" data-action="reject">Reject</button>
@@ -116,13 +111,7 @@
             <td>{{ req.id_number }}</td>
             <td>{{ req.location }}</td>
             <td>{{ req.timestamp_inserted }}</td>
-            <td>
-              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('admin.serve_upload', filename=req.photo_filepath) }}"
-                data-photo-license="{{ url_for('admin.serve_upload', filename=req.license_filepath) }}">
-                View Photos
-              </button>
-            </td>
+            <td>{{ view_photos_btn(req.photo_filepath, req.license_filepath) }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -162,13 +151,7 @@
                 View Comments
               </button>
             </td>
-            <td>
-              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('admin.serve_upload', filename=req.photo_filepath) }}"
-                data-photo-license="{{ url_for('admin.serve_upload', filename=req.license_filepath) }}">
-                View Photos
-              </button>
-            </td>
+            <td>{{ view_photos_btn(req.photo_filepath, req.license_filepath) }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -226,7 +209,7 @@
       <div class="card bg-secondary text-white shadow-lg rounded-4 p-4 profile-form">
         <h4 class="mb-3">Edit Account</h4>
         <form method="POST" action="{{ url_for('admin.change_admin_password') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {{ csrf_field() }}
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
             <input type="text" class="form-control" id="username" name="username" value="{{ current_user.username }}" disabled>
@@ -261,7 +244,7 @@
      <div class="tab-pane fade {% if active_tab == 'search' %}show active{% endif %}" id="search">
         <h4 class="mb-3">Search submissions</h4>
         <form class="d-flex" role="search" method="POST" action="{{ url_for('admin.search_submissions')}}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {{ csrf_field() }}
           <input class="form-control me-2" type="search" placeholder="Search for user submissions" aria-label="Search" name="search_term">
           <button class="btn btn-success" type="submit">Search</button>
         </form>
@@ -288,13 +271,7 @@
             <td>{{ result.id_number }}</td>
             <td>{{ result.location }}</td>
             <td>{{ result.timestamp_inserted }}</td>
-            <td>
-              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#photoModal"
-                data-photo-user="{{ url_for('admin.serve_upload', filename=result.photo_filepath) }}"
-                data-photo-license="{{ url_for('admin.serve_upload', filename=result.license_filepath) }}">
-                View Photos
-              </button>
-            </td>
+            <td>{{ view_photos_btn(result.photo_filepath, result.license_filepath) }}</td>
             <td>
               <button class="deleteSubmissionBtn btn btn-sm btn-danger" data-request-id="{{ result.request_id }}" data-bs-toggle="modal" data-bs-target="#deleteSubmissionModal" data-action="delete" data-submission="{{ result.first_name }} {{ result.last_name}}">Delete</button>
             </td> 

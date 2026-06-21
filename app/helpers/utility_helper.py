@@ -29,6 +29,15 @@ class UtilityHelper:
         return False
 
     @staticmethod
+    def paginate(total, page, per_page) -> dict:
+        total_pages = (total + per_page - 1) // per_page
+        return {
+            "total_pages": total_pages,
+            "next_page":   page + 1 if page < total_pages else None,
+            "prev_page":   page - 1 if page > 1 else None,
+        }
+
+    @staticmethod
     def check_password_complexity(password) -> bool:
         if len(password) > 128:
             flash("Password must be 128 characters or fewer.", "danger")

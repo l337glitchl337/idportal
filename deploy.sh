@@ -283,9 +283,9 @@ setup_certs() {
 
 # ─── Git update check ─────────────────────────────────────────────────────────
 check_git_status() {
-    command -v git &>/dev/null || return
-    [[ -d .git ]] || return
-    git fetch origin --quiet 2>/dev/null || return
+    command -v git &>/dev/null || return 0
+    [[ -d .git ]] || return 0
+    git fetch origin --quiet 2>/dev/null || return 0
 
     local behind
     behind=$(git rev-list "HEAD..@{upstream}" --count 2>/dev/null || echo "0")
@@ -309,7 +309,7 @@ check_git_status() {
 
 # ─── Database backup (pre-update) ─────────────────────────────────────────────
 backup_db() {
-    docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${CTR_DB}$" || return
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${CTR_DB}$" || return 0
 
     step "Database backup"
     local backup_dir="backups"

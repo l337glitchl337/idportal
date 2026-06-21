@@ -7,8 +7,8 @@
 {% endblock %}
 
 {% block content %}
-{% import 'includes/macros.html' as macros %}
-{% from 'includes/macros.html' import csrf_field, view_photos_btn %}
+{% import 'includes/macros.html' as macros with context %}
+{% from 'includes/macros.html' import csrf_field, view_photos_btn with context %}
 <div class="container py-4">
   <h2 class="text-white mb-4">Admin Panel</h2>
   <ul class="nav nav-pills mb-3" id="admin-tab" role="tablist">

@@ -179,8 +179,13 @@ def test_set_session_attrs_sets_keys(app, svc):
     with app.test_request_context('/'):
         result = svc.set_session_attrs(attrs)
         assert session.get('First Name') == 'Alice'
-        assert session.get('user_logged_in') is True
     assert result is True
+
+
+def test_set_session_attrs_marks_user_logged_in(app, svc):
+    with app.test_request_context('/'):
+        svc.set_session_attrs({'Email': 'x@x.com'})
+        assert session.get('user_logged_in') is True
 
 
 # ── entra_admin_login ─────────────────────────────────────────────────────────

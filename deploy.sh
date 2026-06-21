@@ -357,7 +357,7 @@ O  = IDPortal
 CN = localhost
 [v3_req]
 subjectAltName      = ${san}
-keyUsage            = keyEncipherment, dataEncipherment
+keyUsage            = digitalSignature, keyEncipherment
 extendedKeyUsage    = serverAuth
 SSLEOF
 

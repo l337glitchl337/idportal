@@ -309,12 +309,7 @@ setup_certs() {
 
     if $TEST_MODE; then
         info "Test mode: auto-generating self-signed certificate..."
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -keyout "$CERTS_DIR/key.pem" \
-            -out   "$CERTS_DIR/cert.pem" \
-            -subj  "/C=US/ST=State/L=City/O=IDPortal/CN=localhost" \
-            2>/dev/null
-        chmod 600 "$CERTS_DIR/key.pem"
+        _gen_selfsigned_cert
         ok "Self-signed certificate generated (365 days)"
         return
     fi
@@ -332,12 +327,7 @@ setup_certs() {
     read -rp "  Generate self-signed cert for testing? [y/N]: " choice
     case "${choice,,}" in
         y|yes)
-            openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-                -keyout "$CERTS_DIR/key.pem" \
-                -out   "$CERTS_DIR/cert.pem" \
-                -subj  "/C=US/ST=State/L=City/O=IDPortal/CN=localhost" \
-                2>/dev/null
-            chmod 600 "$CERTS_DIR/key.pem"
+            _gen_selfsigned_cert
             ok "Self-signed certificate generated (365 days)"
             warn "Replace with a CA-signed cert before going live"
             ;;
@@ -345,6 +335,39 @@ setup_certs() {
             die "Place cert.pem and key.pem in $CERTS_DIR/ then re-run."
             ;;
     esac
+}
+
+_gen_selfsigned_cert() {
+    local host_ip san openssl_conf
+    host_ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    san="DNS:localhost,IP:127.0.0.1"
+    [[ -n "$host_ip" && "$host_ip" != "127.0.0.1" ]] && san="${san},IP:${host_ip}"
+
+    openssl_conf=$(mktemp)
+    cat > "$openssl_conf" <<SSLEOF
+[req]
+distinguished_name = req_dn
+x509_extensions   = v3_req
+prompt            = no
+[req_dn]
+C  = US
+ST = State
+L  = City
+O  = IDPortal
+CN = localhost
+[v3_req]
+subjectAltName      = ${san}
+keyUsage            = keyEncipherment, dataEncipherment
+extendedKeyUsage    = serverAuth
+SSLEOF
+
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "$CERTS_DIR/key.pem" \
+        -out    "$CERTS_DIR/cert.pem" \
+        -config "$openssl_conf" \
+        2>/dev/null
+    rm -f "$openssl_conf"
+    chmod 600 "$CERTS_DIR/key.pem"
 }
 
 # ─── Git update check ─────────────────────────────────────────────────────────

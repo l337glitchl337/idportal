@@ -14,7 +14,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - logs:/app/logs:z
+      - ./logs:/app/logs
       - config:/app/instance:z
       - uploads:/app/uploads:z
     restart: unless-stopped
@@ -57,7 +57,6 @@ services:
 
 volumes:
   pgdata:
-  logs:
   config:
   uploads:
 networks:
